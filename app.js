@@ -94,6 +94,20 @@ function renderEpisodes() {
     };
     e.map.append(b);
   });
+  scrollCurrentEpisodeIntoView();
+}
+function scrollCurrentEpisodeIntoView() {
+  const currentButton = e.map.querySelector('[aria-current="true"]');
+  const mobile = window.matchMedia("(max-width: 39.99rem)").matches;
+  if (!currentButton || !mobile) {
+    e.map.scrollLeft = 0;
+    return;
+  }
+  const target =
+    currentButton.offsetLeft -
+    (e.map.clientWidth - currentButton.offsetWidth) / 2;
+  const maximum = e.map.scrollWidth - e.map.clientWidth;
+  e.map.scrollLeft = Math.max(0, Math.min(target, maximum));
 }
 function renderEpisode() {
   const ep = lab.episodes[episodeIndex];
@@ -166,7 +180,7 @@ function select(id) {
   e.feedback.textContent = "入力を開始してください。";
   e.execute.disabled = true;
   e.execute.setAttribute("aria-disabled", "true");
-  e.mock.textContent = "模擬実行すると証拠が表示されます。";
+  e.mock.textContent = "コマンドを入力すると、ここに結果が表示されます。";
   e.quiz.hidden = true;
   e.sponsor.hidden = true;
   e.next.hidden = true;
@@ -194,7 +208,7 @@ function update() {
   e.execute.setAttribute("aria-disabled", String(t !== m.command));
   e.feedback.textContent =
     t === m.command
-      ? "入力完了。模擬実行できます。"
+      ? "入力できました。「結果を見る」へ進んでください。"
       : r.firstError >= 0
         ? `最初の誤りは${r.firstError + 1}文字目です。`
         : `${t.length + 1}文字目以降が未入力です。`;
@@ -219,7 +233,7 @@ function execute() {
     e.choices.append(b);
   });
   e.feedback.textContent =
-    "模擬出力を表示しました。確認クイズへ進んでください。";
+    "結果を表示しました。確認クイズへ進んでください。";
 }
 function answer(i, b) {
   const m = missions[current];

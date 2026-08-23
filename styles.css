@@ -1,6 +1,6 @@
 /* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5
  * genre: modern-minimal · macrostructure: Narrative Workflow · theme: Cobalt-on-warm-paper · nav: N13 · footer: Ft5 · enrichment:none
- * contrast: pass (40–41) · slop: pass (1–58) · honest: pass (46) · chrome: pass (47; product terminal, no fake window chrome) · tokens: pass (48) · responsive: pass (49) · mobile: pass (34,49,50–57) */
+ * contrast: pass (40–41) · slop: pass (1–58) · honest: pass (46) · chrome: pass (47; product terminal, no fake window chrome) · tokens: pass (48) · responsive: pass (49) · mobile: pass (34,49,50–57) · copy: beginner-clear · desktop-first episode map · mobile-specific scroll */
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@400;500;600&family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@600;700&display=swap');
 @import url('./tokens.css');
 
@@ -704,6 +704,23 @@ dialog input:disabled {
   }
 }
 
+@media (min-width: 40rem) and (max-width: 59.99rem) {
+  .episode-map {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    overflow: visible;
+  }
+
+  .episode-map::after {
+    display: none;
+  }
+
+  .episode-button {
+    min-width: 0;
+    width: 100%;
+  }
+}
+
 @media (min-width: 60rem) {
   .top-nav {
     padding-inline: var(--space-lg);
@@ -738,7 +755,36 @@ dialog input:disabled {
   }
 
   .episode-map {
-    justify-content: center;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    overflow: visible;
+  }
+
+  .episode-map::after {
+    display: none;
+  }
+
+  .episode-button {
+    flex: none;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .episode-button span {
+    overflow: visible;
+    text-overflow: clip;
+  }
+}
+
+@media (min-width: 60rem) and (max-width: 71.99rem) {
+  .episode-map {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 72rem) {
+  .episode-map {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
@@ -761,7 +807,18 @@ dialog input:disabled {
   }
 
   .episode-map {
+    scroll-snap-type: x mandatory;
     padding-block: 4px;
+  }
+
+  .episode-button {
+    flex-basis: 19rem;
+    scroll-snap-align: start;
+  }
+
+  .episode-button span {
+    overflow: visible;
+    text-overflow: clip;
   }
 
   .story-column {

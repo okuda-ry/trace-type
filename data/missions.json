@@ -24,10 +24,10 @@
         "置き去りのメモを読む"
       ],
       "outs": [
-        "[SAFE SIMULATION]\n/home/analyst/case-014\nNo filesystem was accessed.",
-        "[SAFE SIMULATION]\nprojects/\n.case-id\nauth.log\nNo files were changed.",
-        "[SAFE SIMULATION]\nEntered /home/analyst/case-014/projects\nNo directory was changed.",
-        "[SAFE SIMULATION]\nOwner: ops-trainee\nTicket: NS-248\nNo file was opened."
+        "$ pwd\n/home/analyst/case-014",
+        "$ ls -la\nprojects/\n.case-id\nauth.log",
+        "$ cd projects\ncurrent: /home/analyst/case-014/projects",
+        "$ cat notes.txt\nOwner: ops-trainee\nTicket: NS-248\nNext: review privilege log"
       ],
       "briefing": "Northstar Labの研修端末に、case-014の作業メモが残されていました。現在地から順に確認し、担当者と変更チケットを特定します。",
       "objective": "作業場所をたどり、次の権限監査に必要な担当者とチケット番号を見つける",
@@ -50,7 +50,7 @@
               "safety": "架空の研修端末を読むだけで、実環境は変更しません。"
             }
           ],
-          "output": "[SAFE SIMULATION]\n$ pwd\n/home/analyst/case-014\nNo filesystem was accessed.",
+          "output": "$ pwd\n/home/analyst/case-014",
           "evidence": "現在地はcase-014の作業ディレクトリです。",
           "handoff": "次は、この場所にあるファイルとディレクトリを一覧で確認します。",
           "quiz": {
@@ -89,7 +89,7 @@
               "safety": "一覧条件を変えるだけで、項目は変更しません。"
             }
           ],
-          "output": "[SAFE SIMULATION]\n$ ls -la\nprojects/\n.case-id\nauth.log\nNo files were changed.",
+          "output": "$ ls -la\nprojects/\n.case-id\nauth.log",
           "evidence": "projectsディレクトリと隠し項目.case-idが存在します。",
           "handoff": "次は、メモが置かれたprojectsディレクトリへ移動します。",
           "quiz": {
@@ -118,25 +118,25 @@
               "kind": "command",
               "meaning": "現在の作業ディレクトリを変更します。",
               "why": "メモがあるprojectsに対象を限定できます。",
-              "safety": "模擬端末だけを切り替え、実ファイルシステムは変更しません。"
+              "safety": "教材内の移動だけで、実ファイルシステムは変更しません。"
             },
             {
               "text": "projects",
               "kind": "argument",
               "meaning": "移動先として指定したディレクトリ名です。",
               "why": "棚卸しで見つけた場所へ明示的に移動できます。",
-              "safety": "移動結果は模擬表示で、実FSは変更しません。"
+              "safety": "表示上の移動結果で、実FSは変更しません。"
             }
           ],
-          "output": "[SAFE SIMULATION]\n$ cd projects\ncurrent: /home/analyst/case-014/projects\nNo directory was changed.",
-          "evidence": "模擬端末の現在地が/home/analyst/case-014/projectsへ切り替わりました。",
+          "output": "$ cd projects\ncurrent: /home/analyst/case-014/projects",
+          "evidence": "教材内の現在地が/home/analyst/case-014/projectsへ切り替わりました。",
           "handoff": "次は、projects内のnotes.txtを表示します。",
           "quiz": {
             "question": "cd projectsが変えるものは？",
             "choices": [
               "ログインユーザーの権限",
               "ファイルの内容",
-              "模擬端末の現在の作業ディレクトリ",
+              "教材内の現在の作業ディレクトリ",
               "DNSのMXレコード"
             ],
             "answer": 2,
@@ -167,7 +167,7 @@
               "safety": "教材用の架空ファイル名で、書き込みはありません。"
             }
           ],
-          "output": "[SAFE SIMULATION]\n$ cat notes.txt\nOwner: ops-trainee\nTicket: NS-248\nNext: review privilege log\nNo file was opened.",
+          "output": "$ cat notes.txt\nOwner: ops-trainee\nTicket: NS-248\nNext: review privilege log",
           "evidence": "メモは担当者ops-traineeと変更チケットNS-248を示しています。",
           "handoff": "次のエピソードでは、ops-traineeの権限委任と利用ログを監査します。",
           "quiz": {
@@ -203,10 +203,10 @@
         "拒否された利用を監査する"
       ],
       "outs": [
-        "[SAFE SIMULATION]\nops-trainee\nThe identity is simulated.",
-        "[SAFE SIMULATION]\nuid=1007(ops-trainee) gid=1007 groups=ops,audit\nNo privilege changed.",
-        "[SAFE SIMULATION]\n(ops-trainee) NOPASSWD: /usr/bin/systemctl status northstar-agent\nRules were displayed only.",
-        "[SAFE SIMULATION]\n09:42:18Z ops-trainee sudo: denied restart northstar-agent from 198.51.100.24\nAudit evidence only."
+        "$ whoami\nops-trainee",
+        "$ id\nuid=1007(ops-trainee) gid=1007 groups=ops,audit",
+        "$ sudo -l\n(ops-trainee) /usr/bin/systemctl status northstar-agent",
+        "$ grep sudo auth.log\n09:42:18Z ops-trainee sudo: denied restart northstar-agent from 198.51.100.24"
       ],
       "briefing": "notes.txtで見つけたops-traineeについて、許可済みの権限委任と利用記録を照合します。権限の取得ではなく、不審な試行の検知と監査が目的です。",
       "objective": "ユーザー・所属・委任ルール・監査ログを順に照合し、許可外の操作が拒否された事実を確認する",
@@ -229,7 +229,7 @@
               "safety": "架空のユーザー名を表示するだけで、アカウント操作は行いません。"
             }
           ],
-          "output": "[SAFE SIMULATION]\n$ whoami\nops-trainee\nNo account was accessed.",
+          "output": "$ whoami\nops-trainee",
           "evidence": "有効ユーザーはops-traineeで、notes.txtの担当者と一致します。",
           "handoff": "次はidで所属groupsを照合します。",
           "quiz": {
@@ -261,7 +261,7 @@
               "safety": "架空のID情報を読むだけで、所属は変更しません。"
             }
           ],
-          "output": "[SAFE SIMULATION]\n$ id\nuid=1002(ops-trainee) gid=1002(ops) groups=1002(ops),110(audit-review)\nIdentity data is simulated.",
+          "output": "$ id\nuid=1002(ops-trainee) gid=1002(ops) groups=1002(ops),110(audit-review)",
           "evidence": "groups欄にaudit-reviewが含まれ、監査担当の所属を確認できます。",
           "handoff": "次はsudo policyの許可ルールを実行せず確認します。",
           "quiz": {
@@ -300,7 +300,7 @@
               "safety": "権限変更やサービス操作は行いません。"
             }
           ],
-          "output": "[SAFE SIMULATION]\n$ sudo -l\nUser ops-trainee may run:\n(root) /usr/bin/systemctl status northstar-agent\nNo delegated command was executed.",
+          "output": "$ sudo -l\nUser ops-trainee may run:\n(root) /usr/bin/systemctl status northstar-agent",
           "evidence": "許可されているのはnorthstar-agentのstatus確認だけです。",
           "handoff": "次はauth.logで実利用と拒否結果を照合します。",
           "quiz": {
@@ -346,7 +346,7 @@
               "safety": "Northstar Labの架空ログだけを使います。"
             }
           ],
-          "output": "[SAFE SIMULATION]\n$ grep sudo auth.log\n2026-08-23T09:42:18Z user=ops-trainee action=restart service=northstar-agent result=denied source=203.0.113.17\nAudit evidence only; no action was replayed.",
+          "output": "$ grep sudo auth.log\n2026-08-23T09:42:18Z user=ops-trainee action=restart service=northstar-agent result=denied source=203.0.113.17",
           "evidence": "許可外のrestart試行はdeniedで、時刻・ops-trainee・203.0.113.17を特定できます。",
           "handoff": "次はsource=203.0.113.17とNS-248をDNS変更ログで照合します。",
           "quiz": {
@@ -382,13 +382,13 @@
         "変更チケットを探す"
       ],
       "outs": [
-        "[SAFE SIMULATION]\n2026-06-12 change request NS-248\nexample.test A record review pending.",
-        "[SAFE SIMULATION]\nexample.test. 300 IN A 198.51.100.24\nDNS was not queried.",
-        "[SAFE SIMULATION]\nexample.test mail exchanger = mail-gw.example.test\nDNS was not queried.",
-        "[SAFE SIMULATION]\n2026-06-12T10:11Z MX changed without ticket NS-248\nReview evidence only."
+        "$ cat dns-change.log\n2026-08-23 change request NS-248\nexample.test A record review pending.",
+        "$ dig example.test A\nexample.test. 300 IN A 198.51.100.24",
+        "$ nslookup -type=MX example.test\nexample.test mail exchanger = mail-gw.example.test",
+        "$ grep MX dns-change.log\n2026-08-23T10:11Z MX changed without ticket NS-248"
       ],
       "briefing": "権限監査で記録したsource=203.0.113.17とチケットNS-248を、example.testのDNS変更記録と照合します。AレコードとMXレコードを分けて確認します。",
-      "objective": "変更ログと模擬DNS結果を照合し、チケットのないMX変更を特定する",
+      "objective": "変更ログと教材内DNS結果を照合し、チケットのないMX変更を特定する",
       "completion": "MX変更のチケット欠落と送信元203.0.113.17を記録し、公開サーバーのログ分析へ引き継ぐ",
       "missions": [
         {
@@ -415,9 +415,9 @@
               "safety": "Northstar Labの訓練ログだけを使います。"
             }
           ],
-          "output": "[SAFE SIMULATION]\n$ cat dns-change.log\n2026-08-23T09:48:00Z type=A name=example.test value=198.51.100.24 ticket=NS-248 source=203.0.113.17\n2026-08-23T09:49:12Z type=MX name=example.test value=mail-gw.example.test ticket=NONE source=203.0.113.17\nTraining log only; no DNS change was made.",
+          "output": "$ cat dns-change.log\n2026-08-23T09:48:00Z type=A name=example.test value=198.51.100.24 ticket=NS-248 source=203.0.113.17\n2026-08-23T09:49:12Z type=MX name=example.test value=mail-gw.example.test ticket=NONE source=203.0.113.17",
           "evidence": "A変更はticket=NS-248、MX変更はticket=NONEで、sourceは同じ203.0.113.17です。",
-          "handoff": "次は模擬DNS結果のAレコードと変更記録の値を確認します。",
+          "handoff": "次は教材内DNS結果のAレコードと変更記録の値を確認します。",
           "quiz": {
             "question": "dns-change.logでチケットが欠けている変更はどれですか？",
             "choices": [
@@ -435,7 +435,7 @@
           "order": 2,
           "title": "Aレコードを照合する",
           "goal": "A変更の値がログの198.51.100.24と一致するか確認する",
-          "context": "変更記録でAの値が198.51.100.24と分かりました。模擬DNS結果で一致を確かめます。",
+          "context": "変更記録でAの値が198.51.100.24と分かりました。教材内DNS結果で一致を確かめます。",
           "category": "DNS調査",
           "command": "dig example.test A",
           "tokens": [
@@ -443,8 +443,8 @@
               "text": "dig",
               "kind": "command",
               "meaning": "DNSレコードの問い合わせ結果を表示します。",
-              "why": "変更記録に書かれたAの値を模擬結果と照合できます。",
-              "safety": "予約ドメインの模擬応答で、実DNSへ接続しません。"
+              "why": "変更記録に書かれたAの値を教材内の結果と照合できます。",
+              "safety": "予約ドメインexample.testの表示だけで、実DNSへ接続しません。"
             },
             {
               "text": "example.test",
@@ -461,7 +461,7 @@
               "safety": "結果は架空の198.51.100.24です。"
             }
           ],
-          "output": "[SAFE SIMULATION]\n$ dig example.test A\n;; ANSWER SECTION:\nexample.test. 300 IN A 198.51.100.24\nNo real DNS query was made.",
+          "output": "$ dig example.test A\n;; ANSWER SECTION:\nexample.test. 300 IN A 198.51.100.24",
           "evidence": "example.testのAレコードは198.51.100.24で、変更記録の値と一致します。",
           "handoff": "次は同じ予約ドメインのMXレコードが示すメール配送先を確認します。",
           "quiz": {
@@ -489,15 +489,15 @@
               "text": "nslookup",
               "kind": "command",
               "meaning": "DNSレコードの情報を表示する名前解決コマンドです。",
-              "why": "MX変更記録の配送先を模擬結果と照合できます。",
-              "safety": "ns-sim.example.testの模擬応答だけを表示します。"
+              "why": "MX変更記録の配送先を教材内の結果と照合できます。",
+              "safety": "予約ドメインの教材内応答だけを表示します。"
             },
             {
               "text": "-type=MX",
               "kind": "option",
               "meaning": "MXレコードだけを問い合わせるオプションです。",
               "why": "Aではなくメール配送先に質問を限定できます。",
-              "safety": "問い合わせは模擬で、実DNSへ送信しません。"
+              "safety": "問い合わせ表示だけで、実DNSへ送信しません。"
             },
             {
               "text": "example.test",
@@ -507,7 +507,7 @@
               "safety": "実在ドメインではなく訓練用です。"
             }
           ],
-          "output": "[SAFE SIMULATION]\n$ nslookup -type=MX example.test\nServer: ns-sim.example.test\nexample.test mail exchanger = 10 mail-gw.example.test.\nNo real DNS query was made.",
+          "output": "$ nslookup -type=MX example.test\nServer: ns-sim.example.test\nexample.test mail exchanger = 10 mail-gw.example.test.",
           "evidence": "MXの配送先はmail-gw.example.testで、変更記録の値と一致します。",
           "handoff": "次はdns-change.logからMX変更行だけを抽出し、ticket=NONEを確認します。",
           "quiz": {
@@ -553,7 +553,7 @@
               "safety": "訓練用ログだけを読み取ります。"
             }
           ],
-          "output": "[SAFE SIMULATION]\n$ grep MX dns-change.log\n2026-08-23T09:49:12Z type=MX name=example.test value=mail-gw.example.test ticket=NONE source=203.0.113.17\nRead-only log filtering; no file was changed.",
+          "output": "$ grep MX dns-change.log\n2026-08-23T09:49:12Z type=MX name=example.test value=mail-gw.example.test ticket=NONE source=203.0.113.17",
           "evidence": "抽出したMX行はticket=NONEで、source=203.0.113.17です。",
           "handoff": "次はsource=203.0.113.17とNS-248を認証・アクセス・アプリログで相関します。",
           "quiz": {
@@ -562,7 +562,7 @@
               "TTLが300であること",
               "MX変更の承認記録がない",
               "AレコードがIPv4であること",
-              "模擬DNSサーバー名"
+              "教材DNSサーバー名"
             ],
             "answer": 1,
             "explain": "MX行のticket=NONEは承認記録がないことを示すため、sourceとともに監査対象にします。"
@@ -589,10 +589,10 @@
         "報告用の時系列を読む"
       ],
       "outs": [
-        "[SAFE SIMULATION]\n2026-06-12T09:14Z login failed user=maya ip=203.0.113.17\nCase evidence only.",
-        "[SAFE SIMULATION]\nGET /admin 404 ip=203.0.113.17\nGET /backup 404 ip=203.0.113.17\nNo server was contacted.",
-        "[SAFE SIMULATION]\n2 ERROR lines would be written to errors.txt\nNo file was created.",
-        "[SAFE SIMULATION]\n09:14 failed login 203.0.113.17\n09:22 /admin 404 203.0.113.17\nReport correlation is simulated."
+        "$ grep -i failed auth.log\n2026-08-23T09:14Z login failed user=maya ip=203.0.113.17",
+        "$ cat access.log | grep 404\nGET /admin 404 ip=203.0.113.17\nGET /backup 404 ip=203.0.113.17",
+        "$ grep ERROR app.log > errors.txt\n2 ERROR lines would be written to errors.txt",
+        "$ cat errors.txt\n09:14 failed login 203.0.113.17\n09:22 /admin 404 203.0.113.17"
       ],
       "briefing": "DNS変更ログで特定したsource=203.0.113.17を、認証・アクセス・アプリの3種類のログで追います。時刻・IP・パスを相関し、断定を避けて報告材料を整理します。",
       "objective": "同一送信元の失敗ログイン・404・アプリエラーを時系列で相関する",
@@ -633,10 +633,10 @@
               "kind": "argument",
               "meaning": "認証イベントを記録した入力ログです。",
               "why": "送信元IPとユーザーを失敗時刻に結び付けられます。",
-              "safety": "Northstar Labの模擬ログだけを参照します。"
+              "safety": "Northstar Labの教材内ログだけを参照します。"
             }
           ],
-          "output": "[SAFE SIMULATION]\n$ grep -i failed auth.log\n2026-08-23T09:14:03Z FAILED user=ops-trainee result=denied source=203.0.113.17\n2026-08-23T09:15:41Z failed user=unknown result=denied source=203.0.113.17\nRead-only log filtering; no authentication action was performed.",
+          "output": "$ grep -i failed auth.log\n2026-08-23T09:14:03Z FAILED user=ops-trainee result=denied source=203.0.113.17\n2026-08-23T09:15:41Z failed user=unknown result=denied source=203.0.113.17",
           "evidence": "203.0.113.17から2件の失敗ログインがあり、どちらもresult=deniedです。",
           "handoff": "次はaccess.logで同じ送信元の404リクエストを確認します。",
           "quiz": {
@@ -672,14 +672,14 @@
               "kind": "argument",
               "meaning": "HTTPリクエストを記録した入力ファイルです。",
               "why": "ステータスとパスを送信元IPに結び付けられます。",
-              "safety": "実在サーバーではなくNorthstar Labの模擬記録です。"
+              "safety": "実在サーバーではなくNorthstar Labの教材内記録です。"
             },
             {
               "text": "|",
               "kind": "operator",
               "meaning": "左側の標準出力を右側のコマンド入力へ渡します。",
               "why": "アクセス行をgrepへ流し、404だけを抽出できます。",
-              "safety": "模擬データの受け渡しだけで、外部処理は行いません。"
+              "safety": "教材内データの受け渡しだけで、外部処理は行いません。"
             },
             {
               "text": "grep",
@@ -696,9 +696,9 @@
               "safety": "ステータス文字列を検索するだけで、URLへ接続しません。"
             }
           ],
-          "output": "[SAFE SIMULATION]\n$ cat access.log | grep 404\n2026-08-23T09:22:10Z GET /admin status=404 source=203.0.113.17\n2026-08-23T09:23:02Z GET /backup status=404 source=203.0.113.17\nNo server was contacted.",
+          "output": "$ cat access.log | grep 404\n2026-08-23T09:22:10Z GET /admin status=404 source=203.0.113.17\n2026-08-23T09:23:02Z GET /backup status=404 source=203.0.113.17",
           "evidence": "同じ203.0.113.17から/adminと/backupへの404が記録されています。",
-          "handoff": "次はapp.logからERROR行を報告用の模擬ファイルへ整理します。",
+          "handoff": "次はapp.logからERROR行を報告用の教材内ファイルへ整理します。",
           "quiz": {
             "question": "このコマンドで | が行っていることは？",
             "choices": [
@@ -715,7 +715,7 @@
           "id": "ep04-m3",
           "order": 3,
           "title": "エラー行を整理する",
-          "goal": "app.logのERROR行を模擬ファイルへ整理し、後で時系列を確認できるようにする",
+          "goal": "app.logのERROR行を教材内ファイルへ整理し、後で時系列を確認できるようにする",
           "context": "同じIPによる/adminと/backupの404を確認しました。直後のアプリエラーをまとめます。",
           "category": "ログ分析",
           "command": "grep ERROR app.log > errors.txt",
@@ -746,19 +746,19 @@
               "kind": "operator",
               "meaning": "一致した標準出力を指定ファイルへ送るリダイレクトです。",
               "why": "ERROR行をerrors.txtとして次の確認へまとめられます。",
-              "safety": "この教材では実ファイルを作らず、処理だけを模擬します。"
+              "safety": "実ファイルは作らず、ブラウザ内で処理を表示します。"
             },
             {
               "text": "errors.txt",
               "kind": "argument",
-              "meaning": "抽出したERROR行を受け取る模擬出力先です。",
+              "meaning": "抽出したERROR行を受け取る教材内の出力先です。",
               "why": "複数ログの相関に使う材料を一つに整理できます。",
               "safety": "画面上の仮想ファイルで、端末には作成されません。"
             }
           ],
-          "output": "[SAFE SIMULATION]\n$ grep ERROR app.log > errors.txt\n2 matching lines would be written to errors.txt.\nNo file was created in this simulation.",
-          "evidence": "app.logのERROR一致2行を、errors.txtという模擬バッファへ整理しました。",
-          "handoff": "次は模擬errors.txtを読み、認証・アクセス・アプリの時刻を相関します。",
+          "output": "$ grep ERROR app.log > errors.txt\n2 matching lines would be written to errors.txt.",
+          "evidence": "app.logのERROR一致2行を、errors.txtという教材内バッファへ整理しました。",
+          "handoff": "次は教材内errors.txtを読み、認証・アクセス・アプリの時刻を相関します。",
           "quiz": {
             "question": "`> errors.txt` が表す処理は？",
             "choices": [
@@ -768,7 +768,7 @@
               "認証ログを削除"
             ],
             "answer": 1,
-            "explain": "> はgrepの一致行をerrors.txtへ送る記号です。今回はファイル作成も模擬に留めています。"
+            "explain": "> はgrepの一致行をerrors.txtへ送る記号です。ブラウザ内ではファイル作成を行いません。"
           }
         },
         {
@@ -785,7 +785,7 @@
               "kind": "command",
               "meaning": "指定したファイルの内容を順番に表示します。",
               "why": "整理したERROR行を認証・アクセス記録と時系列で比較できます。",
-              "safety": "模擬ファイルを読むだけで、実環境のログには触れません。"
+              "safety": "教材内ファイルを読むだけで、実環境のログには触れません。"
             },
             {
               "text": "errors.txt",
@@ -795,7 +795,7 @@
               "safety": "表示内容は架空で、実ファイルの読み書きはありません。"
             }
           ],
-          "output": "[SAFE SIMULATION]\n$ cat errors.txt\n2026-08-23T09:24:07Z ERROR path=/admin event=session-denied source=203.0.113.17\n2026-08-23T09:24:32Z ERROR path=/backup event=session-denied source=203.0.113.17\n09:14 failed login, 09:22 /admin 404, 09:23 /backup 404, and 09:24 app ERROR share the source.\nCorrelation is simulated; compromise is not confirmed.",
+          "output": "$ cat errors.txt\n2026-08-23T09:24:07Z ERROR path=/admin event=session-denied source=203.0.113.17\n2026-08-23T09:24:32Z ERROR path=/backup event=session-denied source=203.0.113.17\n09:14 failed login, 09:22 /admin 404, 09:23 /backup 404, and 09:24 app ERROR share the source.\nCorrelation is not confirmation of compromise.",
           "evidence": "09:14-15のfailed、09:22-23の404、09:24のERRORが同じ203.0.113.17に結び付きますが、侵害確定とは断定できません。",
           "handoff": "最終報告では観測事実・未確定事項・推奨する追加確認を分けて記載します。",
           "quiz": {
