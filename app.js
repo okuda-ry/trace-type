@@ -185,6 +185,7 @@ function select(id) {
   e.sponsor.hidden = true;
   e.next.hidden = true;
   e.status.textContent = "";
+  delete e.status.dataset.state;
   e.choices.replaceChildren();
   e.handoff.textContent = m.context;
   renderCharacters(m.command, "");
@@ -222,13 +223,17 @@ function execute() {
   e.execute.disabled = true;
   e.mock.textContent = m.output;
   e.quiz.hidden = false;
+  e.status.textContent = "";
+  delete e.status.dataset.state;
   e.question.textContent = m.quiz.question;
   e.choices.replaceChildren();
   m.quiz.choices.forEach((choice, i) => {
     const b = document.createElement("button");
     b.className = "choice";
     b.type = "button";
-    b.textContent = `${String.fromCharCode(65 + i)} ${choice}`;
+    b.dataset.choiceLetter = String.fromCharCode(65 + i);
+    b.dataset.choiceText = choice;
+    b.textContent = `${b.dataset.choiceLetter} ${choice}`;
     b.onclick = () => answer(i, b);
     e.choices.append(b);
   });
@@ -237,16 +242,23 @@ function execute() {
 }
 function answer(i, b) {
   const m = missions[current];
-  b.classList.add(i === m.quiz.answer ? "correct" : "wrong");
+  [...e.choices.children].forEach((choice) => {
+    choice.classList.remove("correct", "wrong");
+    choice.textContent = `${choice.dataset.choiceLetter} ${choice.dataset.choiceText}`;
+  });
+  const correct = i === m.quiz.answer;
+  b.classList.add(correct ? "correct" : "wrong");
+  b.textContent = `${correct ? "✓" : "×"} ${b.dataset.choiceLetter} ${b.dataset.choiceText}`;
+  e.status.dataset.state = correct ? "correct" : "incorrect";
   if (i !== m.quiz.answer) {
-    e.status.textContent = "不正解です。解説を確認して再挑戦してください。";
+    e.status.textContent = "× 不正解\n解説を確認して、もう一度選んでください。";
     return;
   }
   completed = [...new Set([...completed, m.id])];
   localStorage.setItem("trace-v2-completed", JSON.stringify(completed));
   e.global.textContent = `${completed.length} / ${missions.length}`;
   [...e.choices.children].forEach((x) => (x.disabled = true));
-  e.status.textContent = `${m.quiz.explain} ${m.handoff}`;
+  e.status.textContent = `✓ 正解\n${m.quiz.explain} ${m.handoff}`;
   e.handoff.textContent = m.evidence;
   const next = nextMissionPosition(lab, m.id);
   if (next) {

@@ -489,12 +489,29 @@ p {
   border-color: var(--color-success);
 }
 
+.choice.correct:disabled {
+  opacity: 1;
+}
+
 .choice.wrong {
   border-color: var(--color-warning);
 }
 
 .quiz-status {
   min-height: 2rem;
+  white-space: pre-line;
+}
+
+.quiz-status[data-state="correct"] {
+  background: color-mix(in oklch, var(--color-success) 10%, var(--color-surface));
+  border-left: 3px solid var(--color-success);
+  padding: var(--space-2xs) var(--space-xs);
+}
+
+.quiz-status[data-state="incorrect"] {
+  background: color-mix(in oklch, var(--color-warning) 10%, var(--color-surface));
+  border-left: 3px solid var(--color-warning);
+  padding: var(--space-2xs) var(--space-xs);
 }
 
 .inspector {
