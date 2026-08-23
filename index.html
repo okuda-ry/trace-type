@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TRACE / TYPE — Narrative Security Lab</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+</head>
+<body>
+  <header class="top-nav" aria-label="グローバルナビゲーション">
+    <a class="wordmark" href=".">TRACE / TYPE <span>SECURITY LAB</span></a>
+    <button class="palette-trigger" id="paletteTrigger" type="button">移動 <kbd>Ctrl K</kbd></button>
+    <div class="global-progress" aria-label="全体進捗">
+      <strong id="globalProgress">0 / 16</strong>
+      <span>完了</span>
+    </div>
+  </header>
+  <nav class="episode-map" id="episodeMap" aria-label="エピソード一覧"></nav>
+  <main class="lab-layout">
+    <aside class="story-column" aria-labelledby="episodeTitle">
+      <h1 id="episodeTitle">読み込み中</h1>
+      <p id="episodeSubtitle"></p>
+      <p id="episodeBriefing" class="episode-briefing"></p>
+      <div class="episode-progress" id="episodeProgress"></div>
+      <nav class="mission-sequence" id="missionSequence" aria-label="ミッション手順"></nav>
+    </aside>
+    <section class="practice-column" aria-labelledby="missionTitle">
+      <header class="practice-header">
+        <div>
+          <div class="section-label" id="missionMeta">MISSION</div>
+          <h2 id="missionTitle">読み込み中</h2>
+          <p id="missionGoal"></p>
+        </div>
+        <div class="stats" aria-label="タイピング統計">
+          <span>ACC<strong id="accuracy">100%</strong></span>
+          <span>WPM<strong id="wpm">0</strong></span>
+          <span>CHARS<strong id="chars">0</strong></span>
+        </div>
+      </header>
+      <section class="terminal" aria-labelledby="terminalTitle">
+        <div class="terminal-label">
+          <span id="terminalTitle">SAFE SIMULATION</span>
+          <span id="lessonCount"></span>
+        </div>
+        <div class="typing-meta">
+          <span id="errorMeta">最初の誤り: —</span>
+          <span id="missCount">累積ミス: 0</span>
+        </div>
+        <div class="command-line">
+          <span class="prompt">$</span>
+          <div id="typingOutput" aria-live="polite"></div>
+        </div>
+        <input id="commandInput" class="command-input" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="コマンド入力" aria-describedby="typingFeedback">
+        <div class="typing-feedback" id="typingFeedback" aria-live="polite">
+          入力を開始してください。
+        </div>
+        <div class="action-row">
+          <div>
+            <button class="button secondary" id="hintBtn" type="button">ヒント</button>
+            <button class="button secondary" id="resetBtn" type="button">入力をリセット</button>
+          </div>
+          <button class="button primary" id="executeBtn" type="button" disabled>模擬実行</button>
+        </div>
+      </section>
+      <section class="evidence" aria-labelledby="outputTitle">
+        <h3 id="outputTitle">模擬証拠</h3>
+        <pre id="mockOutput">模擬実行すると証拠が表示されます。</pre>
+      </section>
+      <section class="quiz-card" id="quiz" hidden aria-labelledby="quizTitle">
+        <h2 id="quizTitle">確認クイズ</h2>
+        <p id="quizQuestion"></p>
+        <div class="choices" id="choices"></div>
+        <p class="quiz-status" id="quizStatus" aria-live="polite"></p>
+        <button class="button primary" id="nextBtn" type="button" hidden>次のミッションへ</button>
+      </section>
+      <section class="sponsor" id="sponsor" hidden aria-label="スポンサー教材">
+        <strong>学習資料の紹介予定</strong>
+        <p>広告・アフィリエイト予定。タイピング中は表示しません。</p>
+      </section>
+    </section>
+    <aside class="inspector" aria-labelledby="inspectorTitle">
+      <h2 id="inspectorTitle">現在のトークン</h2>
+      <div class="token-card" id="tokenCard"></div>
+      <dl>
+        <dt>意味</dt>
+        <dd id="meaning"></dd>
+        <dt>調査上の役割</dt>
+        <dd id="why"></dd>
+        <dt>安全メモ</dt>
+        <dd id="safety"></dd>
+      </dl>
+      <div class="handoff" id="handoff"></div>
+    </aside>
+  </main>
+  <footer class="statement">
+    <strong>TYPE → UNDERSTAND.</strong>
+    <span>模擬環境 · 利用規約・プライバシーポリシー準備中</span>
+    <button id="resetAll" type="button">全進捗をリセット</button>
+  </footer>
+  <dialog id="commandPalette" aria-labelledby="paletteTitle">
+    <form method="dialog">
+      <div class="palette-head">
+        <h2 id="paletteTitle">移動</h2>
+        <button value="cancel" aria-label="閉じる">×</button>
+      </div>
+      <label for="paletteInput">エピソード／ミッションを検索</label>
+      <input id="paletteInput" aria-label="エピソード／ミッションを検索" type="search" placeholder="エピソードやミッションを検索" autocomplete="off">
+      <div id="paletteResults"></div>
+    </form>
+  </dialog>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

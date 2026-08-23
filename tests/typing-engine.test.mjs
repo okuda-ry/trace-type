@@ -1,0 +1,11 @@
+import test from 'node:test'; import assert from 'node:assert/strict';
+import {analyze,wpm,tokenAt,mistakeKeysAdded} from '../typing-engine.js';
+test('states and first error',()=>{const r=analyze('abc','ax'); assert.deepEqual(r,{correct:1,incorrect:1,pending:1,extra:0,firstError:1,accuracy:50,characters:2});});
+test('extra chars counted',()=>{const r=analyze('ab','abx'); assert.equal(r.extra,1); assert.equal(r.firstError,2); assert.equal(r.incorrect,1);});
+test('wpm and token boundaries',()=>{assert.equal(wpm('hello','hello',60000),1); const t=tokenAt('grep "ERROR" app.log > errors.txt',8,[{text:'grep "ERROR"',kind:'command'},{text:'app.log',kind:'argument'}]); assert.equal(t.kind,'command');});
+test('empty input is all pending',()=>{const r=analyze('pwd','');assert.equal(r.pending,3);assert.equal(r.firstError,-1);});
+test('prefix keeps remaining pending',()=>{const r=analyze('pwd','pw');assert.equal(r.correct,2);assert.equal(r.pending,1);});
+test('space token boundary and null token',()=>{assert.equal(tokenAt('cat notes.txt',3,[{text:'cat',kind:'command'},{text:'notes.txt',kind:'argument'}]),null);assert.equal(tokenAt('cat notes.txt',4,[{text:'cat',kind:'command'},{text:'notes.txt',kind:'argument'}]).kind,'argument');});
+test('wrong already present then another wrong adds one',()=>{assert.equal(mistakeKeysAdded('abcd','ax','axy'),1);});
+test('deletion adds no mistake',()=>{assert.equal(mistakeKeysAdded('abcd','ax','a'),0);});
+test('extra character adds one',()=>{assert.equal(mistakeKeysAdded('ab','ab','abx'),1);});
