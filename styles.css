@@ -602,8 +602,9 @@ p {
   min-height: 4rem;
   margin: var(--space-xs) 0 0;
   color: var(--color-muted);
-  font: var(--text-sm)/1.5 var(--font-code);
+  font: var(--text-md)/1.6 var(--font-code);
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .quiz-card[hidden],

@@ -233,7 +233,15 @@ test("app revalidates教材 data on load", () => {
 test("lab page busts app and stylesheet caches for the current教材 release", () => {
   const lab = fs.readFileSync(new URL("../lab.html", import.meta.url), "utf8");
   assert.match(lab, /<script\s+type="module"\s+src="app\.js\?v=20260825-inputlayout1"><\/script>/);
-  assert.match(lab, /<link\s+rel="stylesheet"\s+href="styles\.css\?v=20260825-inputlayout1">/);
+  assert.match(lab, /<link\s+rel="stylesheet"\s+href="styles\.css\?v=20260825-outputcopy1">/);
+});
+
+test("command result output stays readable and wraps long evidence safely", () => {
+  const css = fs.readFileSync(new URL("../styles.css", import.meta.url), "utf8");
+  const evidence = css.slice(css.indexOf(".evidence pre"), css.indexOf(".quiz-card[hidden]"));
+  assert.match(evidence, /font:\s*var\(--text-md\)\/1\.6\s+var\(--font-code\)/);
+  assert.match(evidence, /white-space:\s*pre-wrap/);
+  assert.match(evidence, /overflow-wrap:\s*anywhere/);
 });
 
 test("episode story copy wraps in full without line clamping", () => {
@@ -409,7 +417,7 @@ test("index is the public home and lab remains the lesson page", () => {
   assert.match(index, /name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/);
   assert.match(lab, /<a class="wordmark" href="\.\/">/);
   assert.doesNotMatch(lab, /SECURITY LAB/);
-  assert.match(lab, /styles\.css\?v=20260825-inputlayout1/);
+  assert.match(lab, /styles\.css\?v=20260825-outputcopy1/);
   assert.match(lab, /app\.js\?v=20260825-inputlayout1/);
   assert.match(homeCss, /@import url\('\.\/tokens\.css\?v=20260825-home2'\)/);
   assert.match(homeCss, /Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V4/);
