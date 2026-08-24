@@ -1,4 +1,4 @@
-import { analyze, mistakeKeysAdded, tokenAt, wpm } from "./typing-engine.js?v=20260825-panel2";
+import { analyze, mistakeKeysAdded, tokenAt, wpm } from "./typing-engine.js?v=20260825-home1";
 import {
   flattenMissions,
   isMissionUnlocked,
@@ -7,7 +7,7 @@ import {
   normalizeCompleted,
   normalizeMisses,
   resolveInitialMissionId,
-} from "./progression.js?v=20260825-panel2";
+} from "./progression.js?v=20260825-home1";
 const $ = (s) => document.querySelector(s);
 const read = (k, d) => {
   try {
@@ -149,6 +149,11 @@ function episodeMissionId(index) {
     ep.missions.at(-1)?.id ||
     null
   );
+}
+function requestedEpisodeMissionId(data) {
+  const requestedId = new URLSearchParams(window.location.search).get("episode");
+  const index = data.episodes.findIndex((episode) => episode.id === requestedId);
+  return index < 0 ? null : episodeMissionId(index);
 }
 function closeEpisodePicker() {
   if (e.picker) {
@@ -642,7 +647,11 @@ fetch("./data/missions.json", { cache: "no-cache" })
       saved = JSON.parse(localStorage.getItem("trace-v2-current") || "null");
     } catch {}
     renderEpisodes();
-    select(resolveInitialMissionId(data, completed, saved) || missions[0]?.id);
+    select(
+      requestedEpisodeMissionId(data) ||
+        resolveInitialMissionId(data, completed, saved) ||
+        missions[0]?.id,
+    );
     e.global.textContent = `${completed.length} / ${missions.length}`;
   })
   .catch((error) => {

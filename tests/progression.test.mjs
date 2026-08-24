@@ -172,7 +172,7 @@ test("content avoids generic teaching placeholders", () => {
 });
 
 test("visible copy avoids simulation jargon", () => {
-  const visible = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8") + fs.readFileSync(new URL("../app.js", import.meta.url), "utf8");
+  const visible = fs.readFileSync(new URL("../lab.html", import.meta.url), "utf8") + fs.readFileSync(new URL("../app.js", import.meta.url), "utf8");
   assert.equal(/模擬|SAFE SIMULATION|模擬証拠|模擬実行/.test(visible), false);
 });
 
@@ -230,25 +230,25 @@ test("app revalidates教材 data on load", () => {
   assert.doesNotMatch(app, /fetch\("\.\/data\/missions\.json",\s*\{\s*cache:\s*["']no-store["']/);
 });
 
-test("index busts app and stylesheet caches for the current教材 release", () => {
-  const index = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
-  assert.match(index, /<script\s+type="module"\s+src="app\.js\?v=20260825-panel2"><\/script>/);
-  assert.match(index, /<link\s+rel="stylesheet"\s+href="styles\.css\?v=20260825-panel2">/);
+test("lab page busts app and stylesheet caches for the current教材 release", () => {
+  const lab = fs.readFileSync(new URL("../lab.html", import.meta.url), "utf8");
+  assert.match(lab, /<script\s+type="module"\s+src="app\.js\?v=20260825-home1"><\/script>/);
+  assert.match(lab, /<link\s+rel="stylesheet"\s+href="styles\.css\?v=20260825-home1">/);
 });
 
 test("app busts its module dependency caches with the same release key", () => {
   const app = fs.readFileSync(new URL("../app.js", import.meta.url), "utf8");
-  assert.match(app, /from "\.\/typing-engine\.js\?v=20260825-panel2"/);
-  assert.match(app, /from "\.\/progression\.js\?v=20260825-panel2"/);
+  assert.match(app, /from "\.\/typing-engine\.js\?v=20260825-home1"/);
+  assert.match(app, /from "\.\/progression\.js\?v=20260825-home1"/);
 });
 
 test("desktop mission panel has an accessible collapsible rail", () => {
   const app = fs.readFileSync(new URL("../app.js", import.meta.url), "utf8");
   const css = fs.readFileSync(new URL("../styles.css", import.meta.url), "utf8");
-  const index = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
-  assert.match(index, /id="storyToggle"[^>]*aria-controls="storyContent"[^>]*aria-expanded="true"[^>]*aria-label="左欄を閉じる"[^>]*title="左欄を閉じる"/);
-  assert.match(index, /<span class="story-toggle-label" id="storyToggleLabel">左欄を閉じる<\/span>/);
-  assert.match(index, /<div class="story-content" id="storyContent">[\s\S]*id="episodeTitle"[\s\S]*id="missionSequence"/);
+  const lab = fs.readFileSync(new URL("../lab.html", import.meta.url), "utf8");
+  assert.match(lab, /id="storyToggle"[^>]*aria-controls="storyContent"[^>]*aria-expanded="true"[^>]*aria-label="左欄を閉じる"[^>]*title="左欄を閉じる"/);
+  assert.match(lab, /<span class="story-toggle-label" id="storyToggleLabel">左欄を閉じる<\/span>/);
+  assert.match(lab, /<div class="story-content" id="storyContent">[\s\S]*id="episodeTitle"[\s\S]*id="missionSequence"/);
   assert.match(app, /const missionPanelStorageKey = "trace-v2-mission-panel-collapsed"/);
   assert.match(app, /function isDesktopMissionPanel\(\)[\s\S]*min-width: 60rem/);
   assert.match(app, /e\.storyContent\.hidden = collapsed/);
@@ -278,15 +278,15 @@ test("episode map stays readable in desktop grids and scrolls on mobile", () => 
 test("episode disclosure keeps every episode selectable and synchronized", () => {
   const app = fs.readFileSync(new URL("../app.js", import.meta.url), "utf8");
   const css = fs.readFileSync(new URL("../styles.css", import.meta.url), "utf8");
-  const index = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const lab = fs.readFileSync(new URL("../lab.html", import.meta.url), "utf8");
   assert.match(app, /button\.disabled = false/);
   assert.match(app, /button\.setAttribute\("aria-disabled", "false"\)/);
   assert.match(app, /e\.currentSummary\.textContent/);
   assert.match(app, /e\.currentProgress\.textContent/);
   assert.match(app, /renderText\(button, p\.done \+ "\/" \+ p\.total \+ " 完了", "small"\)/);
-  assert.match(index, /<details class="episode-picker" id="episodePicker">/);
-  assert.match(index, /<summary class="episode-picker-summary" aria-label="エピソードを選ぶ" aria-controls="episodeMap" aria-expanded="false">/);
-  assert.match(index, /id="episodeMap"/);
+  assert.match(lab, /<details class="episode-picker" id="episodePicker">/);
+  assert.match(lab, /<summary class="episode-picker-summary" aria-label="エピソードを選ぶ" aria-controls="episodeMap" aria-expanded="false">/);
+  assert.match(lab, /id="episodeMap"/);
   assert.match(app, /function syncEpisodePickerState\(\)/);
   assert.match(app, /e\.picker\?\.addEventListener\("toggle", \(\) => \{[\s\S]*?requestAnimationFrame\(scrollCurrentEpisodeIntoView\)/);
   assert.match(css, /\.episode-picker-summary[\s\S]*?min-height: 44px/);
@@ -295,13 +295,13 @@ test("episode disclosure keeps every episode selectable and synchronized", () =>
 
 test("command palette has useful grouped search and keyboard accessibility", () => {
   const app = fs.readFileSync(new URL("../app.js", import.meta.url), "utf8");
-  const index = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const lab = fs.readFileSync(new URL("../lab.html", import.meta.url), "utf8");
   const css = fs.readFileSync(new URL("../styles.css", import.meta.url), "utf8");
-  assert.match(index, /エピソード／ミッションへ移動/);
-  assert.match(index, /EP名・ミッション名・コマンドを検索/);
-  assert.match(index, /role="combobox"[\s\S]*aria-controls="paletteResults"[\s\S]*aria-expanded="false"[\s\S]*aria-haspopup="listbox"/);
-  assert.match(index, /role="listbox"/);
-  assert.match(index, /↑↓ 移動 · Enter 決定 · Esc 閉じる/);
+  assert.match(lab, /エピソード／ミッションへ移動/);
+  assert.match(lab, /EP名・ミッション名・コマンドを検索/);
+  assert.match(lab, /role="combobox"[\s\S]*aria-controls="paletteResults"[\s\S]*aria-expanded="false"[\s\S]*aria-haspopup="listbox"/);
+  assert.match(lab, /role="listbox"/);
+  assert.match(lab, /↑↓ 移動 · Enter 決定 · Esc 閉じる/);
   assert.match(app, /const maxResults = 8/);
   assert.match(app, /ep\.id/);
   assert.match(app, /String\(ep\.number\)\.padStart\(2, "0"\)/);
@@ -349,6 +349,64 @@ test("locked mission controls expose their unlock reason", () => {
   assert.match(app, /b\.title = reason/);
   assert.match(app, /b\.setAttribute\("aria-label", `\$\{m\.order\}\. \$\{m\.title\}。\$\{reason\}`\)/);
   assert.match(app, /b\.setAttribute\("aria-label", `EP \$\{ep\.number\} · M\$\{m\.order\} · \$\{m\.title\}。\$\{reason\}`\)/);
+});
+
+test("index is the public home and lab remains the lesson page", () => {
+  const index = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const lab = fs.readFileSync(new URL("../lab.html", import.meta.url), "utf8");
+  const homeCss = fs.readFileSync(new URL("../home.css", import.meta.url), "utf8");
+  assert.match(index, /<link rel="stylesheet" href="home\.css\?v=20260825-home1">/);
+  assert.match(index, /<script type="module" src="home\.js\?v=20260825-home1"><\/script>/);
+  assert.match(index, /<h1 id="homeTitle">TYPE → UNDERSTAND\.<\/h1>/);
+  assert.match(index, /コマンドを一文字ずつ入力し、その意味と調査での役割を学びます。/);
+  assert.match(index, /基礎からインシデント対応まで、続きもののエピソードで進みます。/);
+  assert.match(index, /id="episodeList"[\s\S]*aria-label="エピソード一覧"/);
+  assert.match(index, /id="homeStatus" role="status" aria-live="polite"/);
+  assert.match(index, /name="description"/);
+  assert.match(index, /name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/);
+  assert.match(lab, /<a class="wordmark" href="\.\/">/);
+  assert.match(lab, /styles\.css\?v=20260825-home1/);
+  assert.match(lab, /app\.js\?v=20260825-home1/);
+  assert.match(homeCss, /@import url\('\.\/tokens\.css'\)/);
+  assert.match(homeCss, /Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V4/);
+  assert.match(homeCss, /contrast: pass \(40–41\)[\s\S]*icons: pass \(30\)/);
+  assert.match(homeCss, /@media \(min-width: 40rem\)/);
+  assert.match(homeCss, /width: min\(calc\(100% - \(2 \* var\(--space-xs\)\)\), 72rem\)/);
+  assert.match(homeCss, /width: min\(calc\(100% - \(2 \* var\(--space-sm\)\)\), 72rem\)/);
+  assert.match(homeCss, /\.home-hero \{[\s\S]*?max-width: 65ch[\s\S]*?padding-bottom: calc\(var\(--space-xl\) \+ var\(--space-xs\)\)/);
+  assert.match(homeCss, /\.home-hero p[\s\S]*?max-width: 65ch/);
+  assert.match(homeCss, /\.home-hero h1[\s\S]*?min-width: 0/);
+  assert.match(homeCss, /\.home-episode-title[\s\S]*?white-space: nowrap/);
+  assert.match(homeCss, /\.home-episode-subtitle[\s\S]*?text-overflow: ellipsis[\s\S]*?white-space: nowrap/);
+  assert.match(homeCss, /\.home-episode-progress[\s\S]*?font: var\(--text-xs\) var\(--font-body\)/);
+  assert.match(homeCss, /\.home-episode-arrow[\s\S]*?var\(--font-display\)/);
+  assert.doesNotMatch(homeCss, /\.home-episode-progress[\s\S]*?var\(--font-code\)/);
+  assert.match(homeCss, /overflow-x: clip/);
+  assert.match(homeCss, /\.home-episode-list[\s\S]*border-top: 1px solid var\(--color-rule\)/);
+  assert.doesNotMatch(homeCss, /transition\s*:\s*all|gradient|box-shadow|#[0-9a-f]{3,8}\b|font-family:\s*(?!var\()/i);
+  assert.doesNotMatch(homeCss, /(?:gap|margin(?:-[a-z]+)?)\s*:\s*2px/);
+});
+
+test("home builds the episode index from normalized progress", () => {
+  const home = fs.readFileSync(new URL("../home.js", import.meta.url), "utf8");
+  assert.match(home, /from "\.\/progression\.js\?v=20260825-home1"/);
+  assert.match(home, /normalizeCompleted/);
+  assert.match(home, /episodeProgress/);
+  assert.match(home, /fetch\("\.\/data\/missions\.json",\s*\{\s*cache:\s*["']no-cache["']/);
+  assert.match(home, /data\.episodes\.forEach/);
+  assert.match(home, /lab\.html\?episode=/);
+  assert.match(home, /trace-v2-completed/);
+  assert.match(home, /trace-v2-current/);
+  assert.match(home, /aria-current.*page/);
+  assert.match(home, /link\.title = `EP \$\{String\(episode\.number\)\.padStart\(2, "0"\)\} · \$\{episode\.title\}`/);
+});
+
+test("lab query selects a requested episode while invalid values use existing fallback", () => {
+  const app = fs.readFileSync(new URL("../app.js", import.meta.url), "utf8");
+  assert.match(app, /function requestedEpisodeMissionId\(data\)/);
+  assert.match(app, /new URLSearchParams\(window\.location\.search\)\.get\("episode"\)/);
+  assert.match(app, /data\.episodes\.findIndex\(\(episode\) => episode\.id === requestedId\)/);
+  assert.match(app, /requestedEpisodeMissionId\(data\) \|\|[\s\S]*resolveInitialMissionId\(data, completed, saved\)/);
 });
 
 test("accessible quiz states remain explicit", () => {
