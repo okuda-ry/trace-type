@@ -265,10 +265,9 @@ p {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--space-sm);
-  max-width: 1440px;
   width: 100%;
   flex: 1;
-  margin: 0 auto;
+  margin: 0;
   padding: var(--space-sm);
 }
 
@@ -468,11 +467,25 @@ p {
 }
 
 .command-line {
+  position: relative;
   display: flex;
+  align-items: center;
+  min-height: 44px;
   gap: var(--space-2xs);
   margin-top: var(--space-xs);
   font: 600 1.15rem var(--font-code);
   overflow-wrap: anywhere;
+  cursor: text;
+  border-radius: var(--radius-control);
+}
+
+.command-line:focus-within {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.command-line:has(.command-input:disabled) {
+  cursor: not-allowed;
 }
 
 .prompt {
@@ -499,13 +512,28 @@ p {
 
 .command-input {
   position: absolute;
-  width: 1px;
-  height: 1px;
-  opacity: 0;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  color: transparent;
+  caret-color: transparent;
+  opacity: 1;
+  padding: 0;
+  font-size: max(1rem, 16px);
+  cursor: text;
 }
 
 .command-input:hover {
   border-color: var(--color-cobalt);
+}
+
+.command-input:focus,
+.command-input:focus-visible {
+  outline: none;
 }
 
 .command-input:active {
@@ -514,8 +542,9 @@ p {
 
 .command-input:disabled {
   cursor: not-allowed;
-  opacity: .55;
-  background: var(--color-surface-2);
+  opacity: 1;
+  background: transparent;
+  pointer-events: none;
 }
 
 .typing-feedback {
@@ -923,7 +952,9 @@ dialog input:disabled {
     grid-template-columns: minmax(260px, 300px) minmax(0, 1fr) minmax(300px, 340px);
     align-items: start;
     gap: var(--space-lg);
-    padding: var(--space-xl) var(--space-lg);
+    padding-block: var(--space-xl);
+    padding-inline-start: 0;
+    padding-inline-end: var(--space-lg);
   }
 
   .lab-layout.story-panel-collapsed {
@@ -935,6 +966,7 @@ dialog input:disabled {
     display: block;
     border-bottom: 0;
     border-inline-end: 1px solid var(--color-rule);
+    padding-inline-start: var(--space-lg);
     padding-inline-end: calc(44px + var(--space-2xs));
   }
 

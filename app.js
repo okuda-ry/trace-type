@@ -1,4 +1,4 @@
-import { analyze, mistakeKeysAdded, tokenAt, wpm } from "./typing-engine.js?v=20260825-home1";
+import { analyze, mistakeKeysAdded, tokenAt, wpm } from "./typing-engine.js?v=20260825-inputlayout1";
 import {
   flattenMissions,
   isMissionUnlocked,
@@ -7,7 +7,7 @@ import {
   normalizeCompleted,
   normalizeMisses,
   resolveInitialMissionId,
-} from "./progression.js?v=20260825-home1";
+} from "./progression.js?v=20260825-inputlayout1";
 const $ = (s) => document.querySelector(s);
 const read = (k, d) => {
   try {
@@ -530,6 +530,19 @@ e.input.addEventListener("keydown", (x) => {
 });
 e.terminal.addEventListener("pointerdown", (event) => {
   if (!event.target.closest("button")) e.input.focus();
+});
+document.addEventListener("keydown", (event) => {
+  const active = document.activeElement;
+  const guarded = active && active !== document.body && active !== document.documentElement;
+  const tag = active?.tagName?.toLowerCase();
+  if (guarded || ["button", "a", "dialog", "input", "textarea"].includes(tag) || active?.isContentEditable) return;
+  if (e.palette.open || e.input.disabled || event.isComposing || event.ctrlKey || event.metaKey || event.altKey) return;
+  if (event.key !== "Backspace" && event.key.length !== 1) return;
+  event.preventDefault();
+  if (event.key === "Backspace") e.input.value = e.input.value.slice(0, -1);
+  else e.input.value += event.key;
+  e.input.focus();
+  e.input.dispatchEvent(new Event("input", { bubbles: true }));
 });
 $("#hintBtn").onclick = () => {
   const m = missions[current];

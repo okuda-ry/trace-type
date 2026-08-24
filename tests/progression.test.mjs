@@ -232,8 +232,8 @@ test("app revalidates教材 data on load", () => {
 
 test("lab page busts app and stylesheet caches for the current教材 release", () => {
   const lab = fs.readFileSync(new URL("../lab.html", import.meta.url), "utf8");
-  assert.match(lab, /<script\s+type="module"\s+src="app\.js\?v=20260825-home1"><\/script>/);
-  assert.match(lab, /<link\s+rel="stylesheet"\s+href="styles\.css\?v=20260825-storycopy1">/);
+  assert.match(lab, /<script\s+type="module"\s+src="app\.js\?v=20260825-inputlayout1"><\/script>/);
+  assert.match(lab, /<link\s+rel="stylesheet"\s+href="styles\.css\?v=20260825-inputlayout1">/);
 });
 
 test("episode story copy wraps in full without line clamping", () => {
@@ -253,8 +253,8 @@ test("episode story copy wraps in full without line clamping", () => {
 
 test("app busts its module dependency caches with the same release key", () => {
   const app = fs.readFileSync(new URL("../app.js", import.meta.url), "utf8");
-  assert.match(app, /from "\.\/typing-engine\.js\?v=20260825-home1"/);
-  assert.match(app, /from "\.\/progression\.js\?v=20260825-home1"/);
+  assert.match(app, /from "\.\/typing-engine\.js\?v=20260825-inputlayout1"/);
+  assert.match(app, /from "\.\/progression\.js\?v=20260825-inputlayout1"/);
 });
 
 test("desktop mission panel has an accessible collapsible rail", () => {
@@ -279,6 +279,32 @@ test("desktop mission panel has an accessible collapsible rail", () => {
   assert.match(css, /@media \(min-width: 60rem\)[\s\S]*?\.story-toggle \{[\s\S]*?position: absolute[\s\S]*?inset-inline-end: 0/);
   assert.match(css, /\.story-panel-collapsed \.story-column[\s\S]*?padding-inline: 0/);
   assert.doesNotMatch(css, /transition\s*:\s*all/);
+});
+
+test("command input is a visible full-area target with safe body key routing", () => {
+  const app = fs.readFileSync(new URL("../app.js", import.meta.url), "utf8");
+  const css = fs.readFileSync(new URL("../styles.css", import.meta.url), "utf8");
+  const lab = fs.readFileSync(new URL("../lab.html", import.meta.url), "utf8");
+  assert.match(lab, /<div class="command-line">[\s\S]*id="typingOutput"[\s\S]*<input id="commandInput"/);
+  assert.doesNotMatch(css, /\.command-input\s*\{[^}]*width:\s*1px[^}]*height:\s*1px[^}]*opacity:\s*0/);
+  assert.match(css, /\.command-line\s*\{[\s\S]*position:\s*relative[\s\S]*display:\s*flex[\s\S]*align-items:\s*center[\s\S]*min-height:\s*44px[\s\S]*cursor:\s*text/);
+  assert.match(css, /\.command-line:focus-within\s*\{[\s\S]*outline:\s*2px/);
+  assert.match(css, /\.command-input\s*\{[\s\S]*inset:\s*0[\s\S]*width:\s*100%[\s\S]*height:\s*100%[\s\S]*opacity:\s*1/);
+  assert.match(css, /\.command-input:focus,[\s\S]*\.command-input:focus-visible\s*\{[\s\S]*outline:\s*none/);
+  assert.match(css, /\.command-input:disabled\s*\{[\s\S]*opacity:\s*1[\s\S]*background:\s*transparent[\s\S]*pointer-events:\s*none/);
+  assert.match(app, /event\.isComposing[\s\S]*event\.ctrlKey[\s\S]*event\.metaKey[\s\S]*event\.altKey/);
+  assert.match(app, /\["button", "a", "dialog", "input", "textarea"\]/);
+  assert.match(app, /e\.input\.dispatchEvent\(new Event\("input", \{ bubbles: true \}\)\)/);
+});
+
+test("desktop lab layout starts at the viewport edge while story content keeps inset", () => {
+  const css = fs.readFileSync(new URL("../styles.css", import.meta.url), "utf8");
+  const desktop = css.slice(css.indexOf("@media (min-width: 60rem)"));
+  assert.doesNotMatch(css, /\.lab-layout\s*\{[^}]*max-width:\s*1440px/);
+  assert.doesNotMatch(css, /\.lab-layout\s*\{[^}]*margin:\s*0\s+auto/);
+  assert.match(desktop, /\.lab-layout\s*\{[\s\S]*padding-inline-start:\s*0/);
+  assert.match(desktop, /\.story-column\s*\{[\s\S]*padding-inline-start:\s*var\(--space-lg\)/);
+  assert.match(desktop, /\.story-panel-collapsed \.story-column\s*\{[\s\S]*padding-inline:\s*0/);
 });
 
 test("episode map stays readable in desktop grids and scrolls on mobile", () => {
@@ -383,8 +409,8 @@ test("index is the public home and lab remains the lesson page", () => {
   assert.match(index, /name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/);
   assert.match(lab, /<a class="wordmark" href="\.\/">/);
   assert.doesNotMatch(lab, /SECURITY LAB/);
-  assert.match(lab, /styles\.css\?v=20260825-storycopy1/);
-  assert.match(lab, /app\.js\?v=20260825-home1/);
+  assert.match(lab, /styles\.css\?v=20260825-inputlayout1/);
+  assert.match(lab, /app\.js\?v=20260825-inputlayout1/);
   assert.match(homeCss, /@import url\('\.\/tokens\.css\?v=20260825-home2'\)/);
   assert.match(homeCss, /Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V4/);
   assert.match(homeCss, /contrast: pass \(40–41\)[\s\S]*icons: pass \(30\)/);

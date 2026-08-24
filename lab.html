@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>TRACE / TYPE — Narrative Security Lab</title>
-  <link rel="stylesheet" href="styles.css?v=20260825-storycopy1">
+  <link rel="stylesheet" href="styles.css?v=20260825-inputlayout1">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
 </head>
 <body>
@@ -64,8 +64,8 @@
         <div class="command-line">
           <span class="prompt">$</span>
           <div id="typingOutput" aria-live="polite"></div>
+          <input id="commandInput" class="command-input" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="コマンド入力" aria-describedby="typingFeedback">
         </div>
-        <input id="commandInput" class="command-input" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="コマンド入力" aria-describedby="typingFeedback">
         <div class="typing-feedback" id="typingFeedback" aria-live="polite">
           入力を開始してください。
         </div>
@@ -124,6 +124,6 @@
       <p class="palette-hint">↑↓ 移動 · Enter 決定 · Esc 閉じる</p>
     </form>
   </dialog>
-  <script type="module" src="app.js?v=20260825-home1"></script>
+  <script type="module" src="app.js?v=20260825-inputlayout1"></script>
 </body>
 </html>
