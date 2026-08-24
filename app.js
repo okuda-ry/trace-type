@@ -1,4 +1,4 @@
-import { analyze, mistakeKeysAdded, tokenAt, wpm } from "./typing-engine.js?v=20260825-panel1";
+import { analyze, mistakeKeysAdded, tokenAt, wpm } from "./typing-engine.js?v=20260825-panel2";
 import {
   flattenMissions,
   isMissionUnlocked,
@@ -7,7 +7,7 @@ import {
   normalizeCompleted,
   normalizeMisses,
   resolveInitialMissionId,
-} from "./progression.js?v=20260825-panel1";
+} from "./progression.js?v=20260825-panel2";
 const $ = (s) => document.querySelector(s);
 const read = (k, d) => {
   try {
@@ -98,6 +98,7 @@ function syncMissionPanel() {
   e.storyToggle.setAttribute("aria-expanded", String(!collapsed));
   const label = collapsed ? "左欄を開く" : "左欄を閉じる";
   e.storyToggle.setAttribute("aria-label", label);
+  e.storyToggle.title = label;
   e.storyToggleLabel.textContent = label;
   e.storyToggleGlyph.textContent = collapsed ? "→" : "←";
 }

@@ -282,20 +282,16 @@ p {
   display: none;
   align-items: center;
   justify-content: center;
-  gap: var(--space-2xs);
+  width: 44px;
   min-width: 44px;
+  height: 44px;
   min-height: 44px;
-  border: 1px solid var(--color-control);
+  border: 1px solid transparent;
   border-radius: var(--radius-control);
-  background: var(--color-surface);
+  background: transparent;
   color: var(--color-ink);
-  padding: 0 var(--space-xs);
-  text-align: left;
+  padding: 0;
   white-space: nowrap;
-}
-
-.story-toggle[aria-expanded="true"] {
-  background: var(--color-surface);
 }
 
 .story-toggle:hover,
@@ -304,9 +300,14 @@ p {
   background: var(--color-cobalt-soft);
 }
 
-.story-toggle[aria-expanded="false"] {
-  border-color: var(--color-cobalt);
-  background: var(--color-cobalt-soft);
+.story-toggle-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .story-toggle-glyph {
@@ -929,34 +930,35 @@ dialog input:disabled {
   }
 
   .story-column {
+    position: relative;
     display: block;
     border-bottom: 0;
+    border-inline-end: 1px solid var(--color-rule);
+    padding-inline-end: calc(44px + var(--space-2xs));
   }
 
   .story-toggle {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-end: 0;
     display: inline-flex;
   }
 
   .story-panel-collapsed .story-column {
+    position: relative;
     display: flex;
+    align-self: stretch;
     justify-content: center;
     min-width: 0;
+    min-height: 100%;
+    border-inline-end: 1px solid var(--color-rule);
+    padding-inline: 0;
   }
 
   .story-panel-collapsed .story-toggle {
     position: relative;
-    width: 44px;
-    padding-inline: 0;
-  }
-
-  .story-panel-collapsed .story-toggle-label {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    clip-path: inset(50%);
-    white-space: nowrap;
+    inset-block-start: 0;
+    inset-inline-start: 2px;
   }
 
   .mission-sequence {
