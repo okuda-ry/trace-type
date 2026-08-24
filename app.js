@@ -1,4 +1,4 @@
-import { analyze, mistakeKeysAdded, tokenAt, wpm } from "./typing-engine.js?v=20260824-nav3";
+import { analyze, mistakeKeysAdded, tokenAt, wpm } from "./typing-engine.js?v=20260825-panel1";
 import {
   flattenMissions,
   isMissionUnlocked,
@@ -7,7 +7,7 @@ import {
   normalizeCompleted,
   normalizeMisses,
   resolveInitialMissionId,
-} from "./progression.js?v=20260824-nav3";
+} from "./progression.js?v=20260825-panel1";
 const $ = (s) => document.querySelector(s);
 const read = (k, d) => {
   try {
@@ -31,7 +31,20 @@ let lab,
   completed = read("trace-v2-completed", []),
   misses = read("trace-v2-misses", {}),
   episodeIndex = 0;
+const missionPanelStorageKey = "trace-v2-mission-panel-collapsed";
+let missionPanelCollapsed = (() => {
+  try {
+    return localStorage.getItem(missionPanelStorageKey) === "true";
+  } catch {
+    return false;
+  }
+})();
 const e = {
+  layout: $(".lab-layout"),
+  storyToggle: $("#storyToggle"),
+  storyToggleLabel: $("#storyToggleLabel"),
+  storyToggleGlyph: $(".story-toggle-glyph"),
+  storyContent: $("#storyContent"),
   map: $("#episodeMap"),
   picker: $("#episodePicker"),
   pickerSummary: $(".episode-picker-summary"),
@@ -75,6 +88,34 @@ const e = {
   trigger: $("#paletteTrigger"),
   resetAll: $("#resetAll"),
 };
+function isDesktopMissionPanel() {
+  return window.matchMedia("(min-width: 60rem)").matches;
+}
+function syncMissionPanel() {
+  const collapsed = isDesktopMissionPanel() && missionPanelCollapsed;
+  e.storyContent.hidden = collapsed;
+  e.layout.classList.toggle("story-panel-collapsed", collapsed);
+  e.storyToggle.setAttribute("aria-expanded", String(!collapsed));
+  const label = collapsed ? "左欄を開く" : "左欄を閉じる";
+  e.storyToggle.setAttribute("aria-label", label);
+  e.storyToggleLabel.textContent = label;
+  e.storyToggleGlyph.textContent = collapsed ? "→" : "←";
+}
+e.storyToggle.onclick = () => {
+  if (!isDesktopMissionPanel()) return;
+  missionPanelCollapsed = !missionPanelCollapsed;
+  try {
+    localStorage.setItem(missionPanelStorageKey, String(missionPanelCollapsed));
+  } catch {}
+  syncMissionPanel();
+};
+const missionPanelMedia = window.matchMedia("(min-width: 60rem)");
+if (missionPanelMedia.addEventListener) {
+  missionPanelMedia.addEventListener("change", syncMissionPanel);
+} else {
+  missionPanelMedia.addListener(syncMissionPanel);
+}
+syncMissionPanel();
 function renderText(parent, text, tag = "span", className = "") {
   const n = document.createElement(tag);
   n.textContent = text;

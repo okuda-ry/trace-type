@@ -232,14 +232,34 @@ test("app revalidates教材 data on load", () => {
 
 test("index busts app and stylesheet caches for the current教材 release", () => {
   const index = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
-  assert.match(index, /<script\s+type="module"\s+src="app\.js\?v=20260824-nav3"><\/script>/);
-  assert.match(index, /<link\s+rel="stylesheet"\s+href="styles\.css\?v=20260824-nav3">/);
+  assert.match(index, /<script\s+type="module"\s+src="app\.js\?v=20260825-panel1"><\/script>/);
+  assert.match(index, /<link\s+rel="stylesheet"\s+href="styles\.css\?v=20260825-panel1">/);
 });
 
 test("app busts its module dependency caches with the same release key", () => {
   const app = fs.readFileSync(new URL("../app.js", import.meta.url), "utf8");
-  assert.match(app, /from "\.\/typing-engine\.js\?v=20260824-nav3"/);
-  assert.match(app, /from "\.\/progression\.js\?v=20260824-nav3"/);
+  assert.match(app, /from "\.\/typing-engine\.js\?v=20260825-panel1"/);
+  assert.match(app, /from "\.\/progression\.js\?v=20260825-panel1"/);
+});
+
+test("desktop mission panel has an accessible collapsible rail", () => {
+  const app = fs.readFileSync(new URL("../app.js", import.meta.url), "utf8");
+  const css = fs.readFileSync(new URL("../styles.css", import.meta.url), "utf8");
+  const index = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  assert.match(index, /id="storyToggle"[^>]*aria-controls="storyContent"[^>]*aria-expanded="true"[^>]*aria-label="左欄を閉じる"/);
+  assert.match(index, /<span class="story-toggle-label" id="storyToggleLabel">左欄を閉じる<\/span>/);
+  assert.match(index, /<div class="story-content" id="storyContent">[\s\S]*id="episodeTitle"[\s\S]*id="missionSequence"/);
+  assert.match(app, /const missionPanelStorageKey = "trace-v2-mission-panel-collapsed"/);
+  assert.match(app, /function isDesktopMissionPanel\(\)[\s\S]*min-width: 60rem/);
+  assert.match(app, /e\.storyContent\.hidden = collapsed/);
+  assert.match(app, /e\.storyToggle\.setAttribute\("aria-expanded", String\(!collapsed\)\)/);
+  assert.match(app, /const label = collapsed \? "左欄を開く" : "左欄を閉じる"/);
+  assert.match(app, /missionPanelMedia\.addEventListener\("change", syncMissionPanel\)/);
+  assert.match(css, /@media \(min-width: 60rem\)[\s\S]*?\.lab-layout\.story-panel-collapsed[\s\S]*?grid-template-columns: 48px minmax\(0, 1fr\) minmax\(300px, 340px\)/);
+  assert.match(css, /@media \(min-width: 60rem\)[\s\S]*?\.story-toggle \{[\s\S]*?display: inline-flex/);
+  assert.match(css, /\.story-panel-collapsed \.story-toggle-label[\s\S]*?clip-path: inset\(50%\)/);
+  assert.match(css, /\.story-toggle \{[\s\S]*?min-width: 44px[\s\S]*?min-height: 44px[\s\S]*?white-space: nowrap/);
+  assert.doesNotMatch(css, /transition\s*:\s*all/);
 });
 
 test("episode map stays readable in desktop grids and scrolls on mobile", () => {

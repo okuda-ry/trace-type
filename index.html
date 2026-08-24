@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>TRACE / TYPE — Narrative Security Lab</title>
-  <link rel="stylesheet" href="styles.css?v=20260824-nav3">
+  <link rel="stylesheet" href="styles.css?v=20260825-panel1">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
 </head>
 <body>
@@ -27,11 +27,17 @@
   </details>
   <main class="lab-layout">
     <aside class="story-column" aria-labelledby="episodeTitle">
-      <h1 id="episodeTitle">読み込み中</h1>
-      <p id="episodeSubtitle"></p>
-      <p id="episodeBriefing" class="episode-briefing"></p>
-      <div class="episode-progress" id="episodeProgress"></div>
-      <nav class="mission-sequence" id="missionSequence" aria-label="ミッション手順"></nav>
+      <button class="story-toggle" id="storyToggle" type="button" aria-controls="storyContent" aria-expanded="true" aria-label="左欄を閉じる">
+        <span class="story-toggle-glyph" aria-hidden="true">←</span>
+        <span class="story-toggle-label" id="storyToggleLabel">左欄を閉じる</span>
+      </button>
+      <div class="story-content" id="storyContent">
+        <h1 id="episodeTitle">読み込み中</h1>
+        <p id="episodeSubtitle"></p>
+        <p id="episodeBriefing" class="episode-briefing"></p>
+        <div class="episode-progress" id="episodeProgress"></div>
+        <nav class="mission-sequence" id="missionSequence" aria-label="ミッション手順"></nav>
+      </div>
     </aside>
     <section class="practice-column" aria-labelledby="missionTitle">
       <header class="practice-header">
@@ -118,6 +124,6 @@
       <p class="palette-hint">↑↓ 移動 · Enter 決定 · Esc 閉じる</p>
     </form>
   </dialog>
-  <script type="module" src="app.js?v=20260824-nav3"></script>
+  <script type="module" src="app.js?v=20260825-panel1"></script>
 </body>
 </html>

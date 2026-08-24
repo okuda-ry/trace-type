@@ -278,6 +278,51 @@ p {
   min-width: 0;
 }
 
+.story-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2xs);
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid var(--color-control);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  padding: 0 var(--space-xs);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.story-toggle[aria-expanded="true"] {
+  background: var(--color-surface);
+}
+
+.story-toggle:hover,
+.story-toggle:focus-visible {
+  border-color: var(--color-cobalt);
+  background: var(--color-cobalt-soft);
+}
+
+.story-toggle[aria-expanded="false"] {
+  border-color: var(--color-cobalt);
+  background: var(--color-cobalt-soft);
+}
+
+.story-toggle-glyph {
+  color: var(--color-cobalt);
+  font: 600 var(--text-lg)/1 var(--font-code);
+}
+
+.story-content {
+  min-width: 0;
+  grid-column: 1 / -1;
+}
+
+.story-content[hidden] {
+  display: none;
+}
+
 .story-column {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -287,7 +332,8 @@ p {
 }
 
 .story-column h1,
-.story-column > p {
+.story-column > p,
+.story-content > p {
   grid-column: 1 / -1;
 }
 
@@ -878,9 +924,39 @@ dialog input:disabled {
     padding: var(--space-xl) var(--space-lg);
   }
 
+  .lab-layout.story-panel-collapsed {
+    grid-template-columns: 48px minmax(0, 1fr) minmax(300px, 340px);
+  }
+
   .story-column {
     display: block;
     border-bottom: 0;
+  }
+
+  .story-toggle {
+    display: inline-flex;
+  }
+
+  .story-panel-collapsed .story-column {
+    display: flex;
+    justify-content: center;
+    min-width: 0;
+  }
+
+  .story-panel-collapsed .story-toggle {
+    position: relative;
+    width: 44px;
+    padding-inline: 0;
+  }
+
+  .story-panel-collapsed .story-toggle-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 
   .mission-sequence {
@@ -984,7 +1060,8 @@ dialog input:disabled {
     margin: 0;
   }
 
-  .story-column > p {
+  .story-column > p,
+  .story-content > p {
     margin: var(--space-3xs) 0 0;
   }
 
