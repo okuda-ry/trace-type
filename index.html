@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>TRACE / TYPE — Narrative Security Lab</title>
-  <link rel="stylesheet" href="styles.css?v=20260824-20ep">
+  <link rel="stylesheet" href="styles.css?v=20260824-nav3">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
 </head>
 <body>
@@ -16,7 +16,15 @@
       <span>完了</span>
     </div>
   </header>
-  <nav class="episode-map" id="episodeMap" aria-label="エピソード一覧"></nav>
+  <details class="episode-picker" id="episodePicker">
+    <summary class="episode-picker-summary" aria-label="エピソードを選ぶ" aria-controls="episodeMap" aria-expanded="false">
+      <span class="episode-picker-label">エピソードを選ぶ</span>
+      <span class="episode-picker-current" id="currentEpisodeSummary">EP 1 · 読み込み中</span>
+      <span class="episode-picker-progress" id="currentEpisodeProgress">0 / — 完了</span>
+      <span class="episode-picker-chevron" aria-hidden="true">⌄</span>
+    </summary>
+    <nav class="episode-map" id="episodeMap" aria-label="エピソード一覧"></nav>
+  </details>
   <main class="lab-layout">
     <aside class="story-column" aria-labelledby="episodeTitle">
       <h1 id="episodeTitle">読み込み中</h1>
@@ -99,16 +107,17 @@
     <button id="resetAll" type="button">全進捗をリセット</button>
   </footer>
   <dialog id="commandPalette" aria-labelledby="paletteTitle">
-    <form method="dialog">
+    <form method="dialog" class="palette-dialog">
       <div class="palette-head">
-        <h2 id="paletteTitle">移動</h2>
-        <button value="cancel" aria-label="閉じる">×</button>
+        <h2 id="paletteTitle">エピソード／ミッションへ移動</h2>
+      <button value="cancel" aria-label="閉じる">×</button>
       </div>
-      <label for="paletteInput">エピソード／ミッションを検索</label>
-      <input id="paletteInput" aria-label="エピソード／ミッションを検索" type="search" placeholder="エピソードやミッションを検索" autocomplete="off">
-      <div id="paletteResults"></div>
+      <label for="paletteInput">EP名・ミッション名・コマンドを検索</label>
+      <input id="paletteInput" aria-label="EP名・ミッション名・コマンドを検索" type="search" placeholder="EP名・ミッション名・コマンドを検索" autocomplete="off" role="combobox" aria-controls="paletteResults" aria-expanded="false" aria-haspopup="listbox" aria-autocomplete="list">
+      <div id="paletteResults" role="listbox" aria-label="検索結果"></div>
+      <p class="palette-hint">↑↓ 移動 · Enter 決定 · Esc 閉じる</p>
     </form>
   </dialog>
-  <script type="module" src="app.js?v=20260824-20ep"></script>
+  <script type="module" src="app.js?v=20260824-nav3"></script>
 </body>
 </html>

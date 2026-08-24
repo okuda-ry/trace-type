@@ -1,4 +1,4 @@
-import { analyze, mistakeKeysAdded, tokenAt, wpm } from "./typing-engine.js";
+import { analyze, mistakeKeysAdded, tokenAt, wpm } from "./typing-engine.js?v=20260824-nav3";
 import {
   flattenMissions,
   isMissionUnlocked,
@@ -7,7 +7,7 @@ import {
   normalizeCompleted,
   normalizeMisses,
   resolveInitialMissionId,
-} from "./progression.js";
+} from "./progression.js?v=20260824-nav3";
 const $ = (s) => document.querySelector(s);
 const read = (k, d) => {
   try {
@@ -33,6 +33,10 @@ let lab,
   episodeIndex = 0;
 const e = {
   map: $("#episodeMap"),
+  picker: $("#episodePicker"),
+  pickerSummary: $(".episode-picker-summary"),
+  currentSummary: $("#currentEpisodeSummary"),
+  currentProgress: $("#currentEpisodeProgress"),
   sequence: $("#missionSequence"),
   title: $("#episodeTitle"),
   subtitle: $("#episodeSubtitle"),
@@ -87,21 +91,48 @@ function renderEpisodes() {
     b.setAttribute("aria-current", i === episodeIndex);
     renderText(b, `EP ${ep.number} · ${ep.title}`);
     b.onclick = () => {
-      episodeIndex = i;
-      renderEpisode();
+      selectEpisode(i);
     };
     e.map.append(b);
   });
   syncEpisodeMap();
+}
+function episodeMissionId(index) {
+  const ep = lab?.episodes[index];
+  if (!ep) return null;
+  return (
+    ep.missions.find(
+      (m) => !completed.includes(m.id) && isMissionUnlocked(lab, m.id, completed),
+    )?.id ||
+    ep.missions.at(-1)?.id ||
+    null
+  );
+}
+function closeEpisodePicker() {
+  if (e.picker) {
+    e.picker.open = false;
+    syncEpisodePickerState();
+  }
+}
+function syncEpisodePickerState() {
+  if (e.picker && e.pickerSummary) {
+    e.pickerSummary.setAttribute("aria-expanded", String(e.picker.open));
+  }
+}
+function selectEpisode(index) {
+  const id = episodeMissionId(index);
+  if (!id) return;
+  episodeIndex = index;
+  select(id);
+  closeEpisodePicker();
 }
 function syncEpisodeMap() {
   if (!lab) return;
   [...e.map.querySelectorAll(".episode-button")].forEach((button, i) => {
     const ep = lab.episodes[i];
     if (!ep) return;
-    const unlocked = isMissionUnlocked(lab, ep.missions[0]?.id, completed);
-    button.disabled = !unlocked;
-    button.setAttribute("aria-disabled", String(!unlocked));
+    button.disabled = false;
+    button.setAttribute("aria-disabled", "false");
     button.setAttribute("aria-current", String(i === episodeIndex));
     const p = episodeProgress(lab, ep.id, completed);
     const progress = button.querySelector("small");
@@ -111,20 +142,22 @@ function syncEpisodeMap() {
       renderText(button, p.done + "/" + p.total + " 完了", "small");
     }
   });
+  const ep = lab.episodes[episodeIndex];
+  if (ep) {
+    const p = episodeProgress(lab, ep.id, completed);
+    e.currentSummary.textContent = "EP " + ep.number + " · " + ep.title;
+    e.currentProgress.textContent = p.done + " / " + p.total + " 完了";
+  }
   scrollCurrentEpisodeIntoView();
 }
 function scrollCurrentEpisodeIntoView() {
   const currentButton = e.map.querySelector('[aria-current="true"]');
-  const mobile = window.matchMedia("(max-width: 39.99rem)").matches;
-  if (!currentButton || !mobile) {
-    e.map.scrollLeft = 0;
-    return;
-  }
+  if (!currentButton || !e.picker?.open || !e.map.clientHeight) return;
   const target =
-    currentButton.offsetLeft -
-    (e.map.clientWidth - currentButton.offsetWidth) / 2;
-  const maximum = e.map.scrollWidth - e.map.clientWidth;
-  e.map.scrollLeft = Math.max(0, Math.min(target, maximum));
+    currentButton.offsetTop -
+    (e.map.clientHeight - currentButton.offsetHeight) / 2;
+  const maximum = Math.max(0, e.map.scrollHeight - e.map.clientHeight);
+  e.map.scrollTop = Math.max(0, Math.min(target, maximum));
 }
 function renderEpisode() {
   const ep = lab.episodes[episodeIndex];
@@ -141,6 +174,11 @@ function renderEpisode() {
     const unlocked = isMissionUnlocked(lab, m.id, completed);
     b.disabled = !unlocked;
     b.setAttribute("aria-current", missions[current]?.id === m.id);
+    if (!unlocked) {
+      const reason = "前のミッション完了後に解放";
+      b.title = reason;
+      b.setAttribute("aria-label", `${m.order}. ${m.title}。${reason}`);
+    }
     renderText(b, `${m.order}. ${m.title}`);
     renderText(b, unlocked ? "" : "前のミッション完了後", "small");
     b.onclick = () => select(m.id);
@@ -209,6 +247,7 @@ function select(id) {
   renderCharacters(m.command, "");
   renderToken(null);
   renderEpisode();
+  closeEpisodePicker();
   e.global.textContent = `${completed.length} / ${missions.length}`;
   e.input.focus();
   localStorage.setItem("trace-v2-current", JSON.stringify(m.id));
@@ -292,40 +331,138 @@ function answer(i, b) {
   renderEpisode();
 }
 function renderPalette() {
-  const q = e.paletteInput.value.toLowerCase();
+  const q = e.paletteInput.value.trim().toLowerCase();
   e.results.replaceChildren();
-  let matchCount = 0;
-  lab.episodes.forEach((ep) => {
-    const matching = ep.missions.filter((m) =>
-      !q || `${m.title} ${m.command}`.toLowerCase().includes(q),
+  const episodeMatches = [];
+  const missionMatches = [];
+  const episodeSearch = (ep) =>
+    (ep.id +
+      " ep" +
+      String(ep.number).padStart(2, "0") +
+      " ep " +
+      String(ep.number).padStart(2, "0") +
+      " ep" +
+      ep.number +
+      " ep " +
+      ep.number +
+      " " +
+      ep.title +
+      " " +
+      (ep.subtitle || "")).toLowerCase();
+  const missionSearch = (ep, m) =>
+    (ep.id +
+      " ep" +
+      String(ep.number).padStart(2, "0") +
+      " ep " +
+      String(ep.number).padStart(2, "0") +
+      " ep" +
+      ep.number +
+      " ep " +
+      ep.number +
+      " " +
+      ep.title +
+      " " +
+      (ep.subtitle || "") +
+      " " +
+      m.title +
+      " " +
+      m.command +
+      " " +
+      m.category).toLowerCase();
+  if (!q) {
+    const nearby = [...new Set([episodeIndex, episodeIndex + 1, episodeIndex - 1])]
+      .filter((i) => i >= 0 && i < lab.episodes.length);
+    nearby.forEach((i) => episodeMatches.push({ ep: lab.episodes[i], index: i }));
+    lab.episodes[episodeIndex]?.missions.forEach((m) =>
+      missionMatches.push({ ep: lab.episodes[episodeIndex], m }),
     );
-    if (!matching.length) return;
-    const head = document.createElement("div");
-    head.className = "section-label";
-    head.textContent = ep.title;
-    e.results.append(head);
-    matching.forEach((m) => {
-      matchCount += 1;
+  } else {
+    lab.episodes.forEach((ep, index) => {
+      if (episodeSearch(ep).includes(q)) episodeMatches.push({ ep, index });
+      ep.missions.forEach((m) => {
+        if (missionSearch(ep, m).includes(q)) missionMatches.push({ ep, m });
+      });
+    });
+  }
+  const maxResults = 8;
+  const bothKinds = episodeMatches.length > 0 && missionMatches.length > 0;
+  const episodeLimit = bothKinds ? Math.min(4, episodeMatches.length) : maxResults;
+  const episodes = episodeMatches.slice(0, episodeLimit);
+  const missionLimit = bothKinds
+    ? Math.min(maxResults - episodes.length, missionMatches.length)
+    : maxResults;
+  const missionsToShow = missionMatches.slice(0, missionLimit);
+  let optionIndex = 0;
+  const heading = (text) => {
+    const node = document.createElement("div");
+    node.className = "section-label palette-section";
+    node.setAttribute("role", "presentation");
+    node.textContent = text;
+    e.results.append(node);
+  };
+  if (episodes.length) {
+    heading("エピソード");
+    episodes.forEach(({ ep, index }) => {
       const b = document.createElement("button");
-      b.className = "palette-result";
+      b.className = "palette-result palette-episode-result";
       b.type = "button";
+      b.id = "palette-option-" + optionIndex++;
+      b.setAttribute("role", "option");
       b.setAttribute("aria-selected", "false");
-      b.disabled = !isMissionUnlocked(lab, m.id, completed);
-      renderText(b, m.title);
-      renderText(b, b.disabled ? "前のミッション完了後" : m.command, "small");
+      renderText(b, "EP " + ep.number + " · " + ep.title);
+      const p = episodeProgress(lab, ep.id, completed);
+      renderText(
+        b,
+        p.done + "/" + p.total + " 完了" + (ep.subtitle ? " · " + ep.subtitle : ""),
+        "small",
+      );
       b.onclick = () => {
-        select(m.id);
-        e.palette.close();
+        selectEpisode(index);
+        closePalette();
       };
       e.results.append(b);
     });
-  });
-  if (!matchCount) {
+  }
+  if (missionsToShow.length) {
+    heading("ミッション");
+    missionsToShow.forEach(({ ep, m }) => {
+      const b = document.createElement("button");
+      b.className = "palette-result palette-mission-result";
+      b.type = "button";
+      b.id = "palette-option-" + optionIndex++;
+      b.setAttribute("role", "option");
+      b.setAttribute("aria-selected", "false");
+      const unlocked = isMissionUnlocked(lab, m.id, completed);
+      b.disabled = !unlocked;
+      b.setAttribute("aria-disabled", String(!unlocked));
+      if (!unlocked) {
+        const reason = "前のミッション完了後に解放";
+        b.title = reason;
+        b.setAttribute("aria-label", `EP ${ep.number} · M${m.order} · ${m.title}。${reason}`);
+      }
+      renderText(b, "EP " + ep.number + " · M" + m.order + " · " + m.title);
+      renderText(
+        b,
+        unlocked ? m.command : "前のミッション完了後に解放",
+        "small",
+        "palette-command",
+      );
+      b.onclick = () => {
+        if (b.disabled) return;
+        select(m.id);
+        closePalette();
+      };
+      e.results.append(b);
+    });
+  }
+  if (!episodes.length && !missionsToShow.length) {
     const empty = document.createElement("p");
     empty.className = "palette-empty";
-    empty.textContent = "該当するミッションはありません。";
+    empty.textContent = "該当するエピソード／ミッションはありません。";
     e.results.append(empty);
   }
+  activePaletteIndex = -1;
+  setPaletteActive(0);
 }
 e.input.addEventListener("input", () => {
   const m = missions[current],
@@ -376,6 +513,8 @@ e.paletteInput.addEventListener("input", renderPalette);
 let activePaletteIndex = -1;
 function closePalette() {
   if (e.palette.open) e.palette.close();
+  e.paletteInput.setAttribute("aria-expanded", "false");
+  e.paletteInput.removeAttribute("aria-activedescendant");
   e.trigger.focus();
 }
 function openPalette() {
@@ -383,6 +522,7 @@ function openPalette() {
   activePaletteIndex = -1;
   renderPalette();
   e.palette.showModal();
+  e.paletteInput.setAttribute("aria-expanded", "true");
   e.paletteInput.focus();
 }
 function setPaletteActive(index) {
@@ -393,13 +533,29 @@ function setPaletteActive(index) {
     item.setAttribute("aria-selected", String(i === activePaletteIndex));
   });
   if (items[activePaletteIndex]) {
+    e.paletteInput.setAttribute(
+      "aria-activedescendant",
+      items[activePaletteIndex].id,
+    );
     items[activePaletteIndex].scrollIntoView({ block: "nearest" });
+  } else {
+    e.paletteInput.removeAttribute("aria-activedescendant");
   }
 }
+e.palette.addEventListener("close", () => {
+  e.paletteInput.setAttribute("aria-expanded", "false");
+  e.paletteInput.removeAttribute("aria-activedescendant");
+  e.trigger.focus();
+});
+e.picker?.addEventListener("toggle", () => {
+  syncEpisodePickerState();
+  if (e.picker.open) requestAnimationFrame(scrollCurrentEpisodeIntoView);
+});
 e.palette.addEventListener("click", (event) => {
   if (event.target === e.palette) closePalette();
 });
 e.paletteInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") event.preventDefault();
   if (event.key === "ArrowDown" || event.key === "ArrowUp") {
     event.preventDefault();
     setPaletteActive(activePaletteIndex + (event.key === "ArrowDown" ? 1 : -1));

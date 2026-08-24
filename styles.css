@@ -129,6 +129,64 @@ p {
   font-family: var(--font-display);
 }
 
+.episode-picker {
+  border-bottom: 1px solid var(--color-rule);
+}
+
+.episode-picker-summary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--space-xs);
+  min-height: 44px;
+  padding: var(--space-3xs) var(--space-sm);
+  color: var(--color-ink);
+  cursor: pointer;
+  list-style: none;
+}
+
+.episode-picker-summary::-webkit-details-marker {
+  display: none;
+}
+
+.episode-picker-summary:focus-visible {
+  outline: 2px solid var(--color-cobalt);
+  outline-offset: -2px;
+}
+
+.episode-picker-label {
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: .04em;
+  white-space: nowrap;
+}
+
+.episode-picker-current {
+  min-width: 0;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+.episode-picker-progress {
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+.episode-picker-chevron {
+  color: var(--color-muted);
+  font-size: var(--text-lg);
+  line-height: 1;
+  transition: transform var(--dur-short) var(--ease-out);
+}
+
+.episode-picker[open] .episode-picker-chevron {
+  transform: rotate(180deg);
+}
+
 .episode-map {
   position: relative;
   display: flex;
@@ -601,12 +659,19 @@ dd {
 dialog {
   width: min(40rem, calc(100% - 2rem));
   max-height: calc(100dvh - 2rem);
-  overflow: auto;
+  overflow: hidden;
   border: 1px solid var(--color-control);
   border-radius: var(--radius-control);
   background: var(--color-surface);
   color: var(--color-ink);
   padding: var(--space-sm);
+}
+
+.palette-dialog {
+  display: grid;
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+  max-height: calc(100dvh - 4rem);
+  min-height: 0;
 }
 
 dialog::backdrop {
@@ -653,6 +718,7 @@ dialog input:disabled {
 .palette-head button {
   border: 1px solid transparent;
   background: transparent;
+  min-width: 44px;
 }
 
 .palette-head button:hover,
@@ -663,8 +729,9 @@ dialog input:disabled {
 
 .palette-result {
   display: flex;
-  align-items: center;
-  gap: var(--space-xs);
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
   width: 100%;
   min-height: 44px;
   border: 0;
@@ -676,7 +743,7 @@ dialog input:disabled {
 
 .palette-result small {
   flex: none;
-  max-width: 45%;
+  width: 100%;
   overflow: hidden;
   color: var(--color-muted);
   font-size: var(--text-xs);
@@ -685,8 +752,32 @@ dialog input:disabled {
 .palette-result span {
   min-width: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+.palette-command {
+  font-family: var(--font-code);
+  overflow-wrap: anywhere;
+}
+
+.palette-section {
+  margin-top: var(--space-xs);
+  padding-inline: var(--space-2xs);
+}
+
+#paletteResults {
+  min-height: 0;
+  max-height: min(30rem, calc(100dvh - 13rem));
+  overflow: auto;
+  border-top: 1px solid var(--color-rule);
+  border-bottom: 1px solid var(--color-rule);
+}
+
+.palette-hint {
+  margin: var(--space-xs) 0 0;
+  color: var(--color-muted);
+  font-size: var(--text-xs);
 }
 
 .palette-result.active {
@@ -861,6 +952,15 @@ dialog input:disabled {
     padding-block: 4px;
   }
 
+  .episode-picker-summary {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: var(--space-2xs);
+  }
+
+  .episode-picker-label {
+    display: none;
+  }
+
   .episode-button {
     flex-basis: 19rem;
     scroll-snap-align: start;
@@ -936,6 +1036,46 @@ dialog input:disabled {
   .episode-briefing,
   #episodeBriefing {
     -webkit-line-clamp: 1;
+  }
+}
+
+@media (max-width: 39.99rem) {
+  .episode-picker[open] .episode-map {
+    display: flex;
+    flex-direction: column;
+    max-height: min(28rem, calc(100dvh - 10rem));
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .episode-picker[open] .episode-button {
+    flex: 0 0 auto;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    height: auto;
+  }
+
+  .episode-picker[open] .episode-button span {
+    overflow: visible;
+    overflow-wrap: anywhere;
+    text-overflow: clip;
+    white-space: normal;
+  }
+
+  .episode-picker[open] .episode-button small {
+    margin-left: 0;
+  }
+}
+
+@media (min-width: 40rem) {
+  .episode-picker[open] .episode-map {
+    max-height: min(30rem, calc(100dvh - 10rem));
+    overflow-x: hidden;
+    overflow-y: auto;
   }
 }
 

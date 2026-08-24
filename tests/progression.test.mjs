@@ -57,9 +57,17 @@ test("schema has twenty episodes and ninety-six missions", () => {
   }
 });
 
-test("first mission only is unlocked", () => {
-  assert.equal(isMissionUnlocked(data, all[0].id, []), true);
-  assert.equal(isMissionUnlocked(data, all[1].id, []), false);
+test("each episode starts unlocked and gates only its next mission", () => {
+  for (const ep of data.episodes) {
+    assert.equal(isMissionUnlocked(data, ep.missions[0].id, []), true, ep.id);
+    assert.equal(isMissionUnlocked(data, ep.missions[1].id, []), false, ep.id);
+    assert.equal(
+      isMissionUnlocked(data, ep.missions[1].id, [ep.missions[0].id]),
+      true,
+      ep.id,
+    );
+  }
+  assert.equal(isMissionUnlocked(data, "ep02-m2", ["ep01-m4"]), false);
 });
 
 test("previous completion unlocks next and boundary next works", () => {
@@ -145,8 +153,11 @@ test("progression state normalization remains safe", () => {
   assert.deepEqual(normalizeCompleted(data, ["ep01-m1", "ep01-m1", "unknown"]), ["ep01-m1"]);
   assert.deepEqual(normalizeMisses(data, { "ep01-m1": 2.9, "ep01-m2": Number.NaN, "ep01-m3": -1, unknown: 4, "ep01-m4": 0 }), { "ep01-m1": 2, "ep01-m4": 0 });
   assert.equal(resolveInitialMissionId(data, ["ep01-m1"], "missing"), "ep01-m2");
-  assert.equal(resolveInitialMissionId(data, [], "ep04-m4"), "ep01-m1");
+  assert.equal(resolveInitialMissionId(data, [], null), "ep01-m1");
+  assert.equal(resolveInitialMissionId(data, [], "ep06-m1"), "ep06-m1");
+  assert.equal(resolveInitialMissionId(data, [], "ep06-m2"), "ep01-m1");
   assert.equal(resolveInitialMissionId(data, ["ep01-m1"], "ep01-m1"), "ep01-m1");
+  assert.equal(resolveInitialMissionId(data, all.map((m) => m.id), null), "ep20-m5");
   assert.equal(resolveInitialMissionId({ episodes: [] }, [], "x"), null);
 });
 
@@ -204,10 +215,13 @@ test("app keeps episode progress map synchronized on state changes", () => {
   const app = fs.readFileSync(new URL("../app.js", import.meta.url), "utf8");
   assert.match(app, /function syncEpisodeMap\(\)/);
   assert.match(app, /function renderEpisode\(\)[\s\S]*?syncEpisodeMap\(\);/);
-  assert.match(app, /b\.onclick = \(\) => \{\s*episodeIndex = i;\s*renderEpisode\(\);/);
+  assert.match(app, /b\.onclick = \(\) => \{\s*selectEpisode\(i\);/);
+  assert.match(app, /function episodeMissionId\(index\)/);
+  assert.match(app, /function selectEpisode\(index\)[\s\S]*?select\(id\)[\s\S]*?closeEpisodePicker\(\);/);
   assert.match(app, /b\.onclick = \(\) => select\(m\.id\)/);
   assert.match(app, /function answer\([\s\S]*?completed = \[\.\.\.new Set/);
   assert.match(app, /completed = \[\];[\s\S]*?select\(missions\[0\]\.id\)/);
+  assert.match(app, /function renderEpisode\(\)[\s\S]*?syncEpisodeMap\(\);/);
 });
 
 test("app revalidates教材 data on load", () => {
@@ -218,8 +232,14 @@ test("app revalidates教材 data on load", () => {
 
 test("index busts app and stylesheet caches for the current教材 release", () => {
   const index = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
-  assert.match(index, /<script\s+type="module"\s+src="app\.js\?v=20260824-20ep"><\/script>/);
-  assert.match(index, /<link\s+rel="stylesheet"\s+href="styles\.css\?v=20260824-20ep">/);
+  assert.match(index, /<script\s+type="module"\s+src="app\.js\?v=20260824-nav3"><\/script>/);
+  assert.match(index, /<link\s+rel="stylesheet"\s+href="styles\.css\?v=20260824-nav3">/);
+});
+
+test("app busts its module dependency caches with the same release key", () => {
+  const app = fs.readFileSync(new URL("../app.js", import.meta.url), "utf8");
+  assert.match(app, /from "\.\/typing-engine\.js\?v=20260824-nav3"/);
+  assert.match(app, /from "\.\/progression\.js\?v=20260824-nav3"/);
 });
 
 test("episode map stays readable in desktop grids and scrolls on mobile", () => {
@@ -227,18 +247,84 @@ test("episode map stays readable in desktop grids and scrolls on mobile", () => 
   assert.match(css, /@media \(min-width: 40rem\)[\s\S]*?\.episode-button \{[\s\S]*?flex-direction: column;[\s\S]*?min-height: 52px;[\s\S]*?height: auto;/);
   assert.match(css, /\.episode-button span \{[\s\S]*?overflow: visible;[\s\S]*?text-overflow: clip;[\s\S]*?white-space: normal;/);
   assert.match(css, /@media \(min-width: 60rem\) and \(max-width: 71\.99rem\)[\s\S]*?grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
-  assert.match(css, /@media \(max-width: 35rem\)[\s\S]*?\.episode-map \{[\s\S]*?scroll-snap-type: x mandatory;/);
+  assert.match(css, /@media \(max-width: 39\.99rem\)[\s\S]*?\.episode-picker\[open\] \.episode-map[\s\S]*?flex-direction: column;[\s\S]*?overflow-y: auto;/);
+  assert.match(css, /\.episode-picker\[open\] \.episode-button span[\s\S]*?white-space: normal;/);
 });
 
-test("locked episodes remain visible but cannot desynchronize the lesson view", () => {
+test("episode disclosure keeps every episode selectable and synchronized", () => {
   const app = fs.readFileSync(new URL("../app.js", import.meta.url), "utf8");
   const css = fs.readFileSync(new URL("../styles.css", import.meta.url), "utf8");
-  assert.match(app, /const unlocked = isMissionUnlocked\(lab, ep\.missions\[0\]\?\.id, completed\)/);
-  assert.match(app, /button\.disabled = !unlocked/);
-  assert.match(app, /button\.setAttribute\("aria-disabled", String\(!unlocked\)\)/);
+  const index = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  assert.match(app, /button\.disabled = false/);
+  assert.match(app, /button\.setAttribute\("aria-disabled", "false"\)/);
+  assert.match(app, /e\.currentSummary\.textContent/);
+  assert.match(app, /e\.currentProgress\.textContent/);
   assert.match(app, /renderText\(button, p\.done \+ "\/" \+ p\.total \+ " 完了", "small"\)/);
-  assert.match(css, /\.episode-button:disabled \{[\s\S]*?opacity: 1;[\s\S]*?cursor: not-allowed;[\s\S]*?background: var\(--color-surface-2\);/);
-  assert.match(css, /\.episode-button:disabled span,[\s\S]*?\.episode-button:disabled small \{[\s\S]*?color: var\(--color-muted\);/);
+  assert.match(index, /<details class="episode-picker" id="episodePicker">/);
+  assert.match(index, /<summary class="episode-picker-summary" aria-label="エピソードを選ぶ" aria-controls="episodeMap" aria-expanded="false">/);
+  assert.match(index, /id="episodeMap"/);
+  assert.match(app, /function syncEpisodePickerState\(\)/);
+  assert.match(app, /e\.picker\?\.addEventListener\("toggle", \(\) => \{[\s\S]*?requestAnimationFrame\(scrollCurrentEpisodeIntoView\)/);
+  assert.match(css, /\.episode-picker-summary[\s\S]*?min-height: 44px/);
+  assert.match(css, /\.episode-picker\[open\] \.episode-map[\s\S]*?max-height:[\s\S]*?overflow-y: auto/);
+});
+
+test("command palette has useful grouped search and keyboard accessibility", () => {
+  const app = fs.readFileSync(new URL("../app.js", import.meta.url), "utf8");
+  const index = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const css = fs.readFileSync(new URL("../styles.css", import.meta.url), "utf8");
+  assert.match(index, /エピソード／ミッションへ移動/);
+  assert.match(index, /EP名・ミッション名・コマンドを検索/);
+  assert.match(index, /role="combobox"[\s\S]*aria-controls="paletteResults"[\s\S]*aria-expanded="false"[\s\S]*aria-haspopup="listbox"/);
+  assert.match(index, /role="listbox"/);
+  assert.match(index, /↑↓ 移動 · Enter 決定 · Esc 閉じる/);
+  assert.match(app, /const maxResults = 8/);
+  assert.match(app, /ep\.id/);
+  assert.match(app, /String\(ep\.number\)\.padStart\(2, "0"\)/);
+  assert.match(app, /const nearby = \[\.\.\.new Set\(\[episodeIndex, episodeIndex \+ 1, episodeIndex - 1\]\)/);
+  assert.match(app, /lab\.episodes\[episodeIndex\]\?\.missions\.forEach/);
+  const episodeSearchStart = app.indexOf("const episodeSearch =");
+  const missionSearchStart = app.indexOf("const missionSearch =", episodeSearchStart);
+  assert.ok(episodeSearchStart >= 0 && missionSearchStart > episodeSearchStart);
+  assert.doesNotMatch(app.slice(episodeSearchStart, missionSearchStart), /briefing/);
+  assert.match(app, /const bothKinds = episodeMatches\.length > 0 && missionMatches\.length > 0/);
+  assert.match(app, /const episodeLimit = bothKinds \? Math\.min\(4, episodeMatches\.length\) : maxResults/);
+  assert.match(app, /Math\.min\(maxResults - episodes\.length, missionMatches\.length\)/);
+  assert.match(app, /heading\("エピソード"\)/);
+  assert.match(app, /heading\("ミッション"\)/);
+  assert.match(app, /node\.setAttribute\("role", "presentation"\)/);
+  assert.match(app, /ep\.subtitle/);
+  assert.match(app, /m\.command/);
+  assert.match(app, /前のミッション完了後に解放/);
+  assert.match(app, /if \(event\.key === "Enter"\) event\.preventDefault\(\);/);
+  assert.match(app, /e\.paletteInput\.setAttribute\("aria-expanded", "true"\)/);
+  assert.match(app, /e\.paletteInput\.setAttribute\("aria-expanded", "false"\)/);
+  assert.match(app, /e\.paletteInput\.removeAttribute\("aria-activedescendant"\)/);
+  assert.match(app, /aria-activedescendant/);
+  assert.match(app, /setPaletteActive\(0\)/);
+  assert.match(css, /font-family: var\(--font-code\)/);
+  assert.doesNotMatch(css, /var\(--font-mono\)/);
+  assert.match(css, /transition: transform var\(--dur-short\) var\(--ease-out\)/);
+  assert.match(css, /\.palette-head button[\s\S]*?min-width: 44px/);
+});
+
+test("episode picker keeps the current item visible in its open vertical list", () => {
+  const app = fs.readFileSync(new URL("../app.js", import.meta.url), "utf8");
+  const css = fs.readFileSync(new URL("../styles.css", import.meta.url), "utf8");
+  assert.match(app, /if \(!currentButton \|\| !e\.picker\?\.open \|\| !e\.map\.clientHeight\) return/);
+  assert.match(app, /currentButton\.offsetTop/);
+  assert.match(app, /e\.map\.scrollTop = Math\.max\(0, Math\.min\(target, maximum\)\)/);
+  assert.doesNotMatch(app.slice(app.indexOf("function scrollCurrentEpisodeIntoView"), app.indexOf("function renderEpisode")), /scrollLeft/);
+  assert.match(app, /if \(e\.picker\.open\) requestAnimationFrame\(scrollCurrentEpisodeIntoView\)/);
+  assert.match(css, /@media \(max-width: 35rem\)[\s\S]*?\.episode-picker-label \{[\s\S]*?display: none;/);
+  assert.match(css, /@media \(max-width: 35rem\)[\s\S]*?\.episode-picker-summary \{[\s\S]*?grid-template-columns: minmax\(0, 1fr\) auto auto;/);
+});
+
+test("locked mission controls expose their unlock reason", () => {
+  const app = fs.readFileSync(new URL("../app.js", import.meta.url), "utf8");
+  assert.match(app, /b\.title = reason/);
+  assert.match(app, /b\.setAttribute\("aria-label", `\$\{m\.order\}\. \$\{m\.title\}。\$\{reason\}`\)/);
+  assert.match(app, /b\.setAttribute\("aria-label", `EP \$\{ep\.number\} · M\$\{m\.order\} · \$\{m\.title\}。\$\{reason\}`\)/);
 });
 
 test("accessible quiz states remain explicit", () => {

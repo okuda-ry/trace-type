@@ -32,18 +32,23 @@ export function normalizeMisses(data, value) {
 export function isMissionUnlocked(data, id, completed = []) {
   const position = findMissionPosition(data, id);
   if (!position) return false;
-  const all = flattenMissions(data);
-  return position.index === 0 || completed.includes(all[position.index - 1].id);
+  const mission = position.mission;
+  if (mission.missionIndex === 0) return true;
+  const episode = data.episodes?.[mission.episodeIndex];
+  const previous = episode?.missions?.[mission.missionIndex - 1];
+  return Boolean(previous && completed.includes(previous.id));
 }
 export function resolveInitialMissionId(data, completed, saved) {
   const all = flattenMissions(data);
   const normalized = normalizeCompleted(data, completed);
   if (saved && isMissionUnlocked(data, saved, normalized)) return saved;
   return (
-    [...all]
-      .reverse()
-      .find((mission) => isMissionUnlocked(data, mission.id, normalized))?.id ||
-    all[0]?.id ||
+    all.find(
+      (mission) =>
+        !normalized.includes(mission.id) &&
+        isMissionUnlocked(data, mission.id, normalized),
+    )?.id ||
+    all.at(-1)?.id ||
     null
   );
 }
