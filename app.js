@@ -86,13 +86,30 @@ function renderEpisodes() {
     b.type = "button";
     b.setAttribute("aria-current", i === episodeIndex);
     renderText(b, `EP ${ep.number} · ${ep.title}`);
-    const p = episodeProgress(lab, ep.id, completed);
-    renderText(b, `${p.done}/${p.total} 完了`, "small");
     b.onclick = () => {
       episodeIndex = i;
       renderEpisode();
     };
     e.map.append(b);
+  });
+  syncEpisodeMap();
+}
+function syncEpisodeMap() {
+  if (!lab) return;
+  [...e.map.querySelectorAll(".episode-button")].forEach((button, i) => {
+    const ep = lab.episodes[i];
+    if (!ep) return;
+    const unlocked = isMissionUnlocked(lab, ep.missions[0]?.id, completed);
+    button.disabled = !unlocked;
+    button.setAttribute("aria-disabled", String(!unlocked));
+    button.setAttribute("aria-current", String(i === episodeIndex));
+    const p = episodeProgress(lab, ep.id, completed);
+    const progress = button.querySelector("small");
+    if (progress) {
+      progress.textContent = p.done + "/" + p.total + " 完了";
+    } else {
+      renderText(button, p.done + "/" + p.total + " 完了", "small");
+    }
   });
   scrollCurrentEpisodeIntoView();
 }
@@ -129,7 +146,7 @@ function renderEpisode() {
     b.onclick = () => select(m.id);
     e.sequence.append(b);
   });
-  renderEpisodes();
+  syncEpisodeMap();
 }
 function renderCharacters(target, typed) {
   e.output.replaceChildren();
@@ -171,7 +188,8 @@ function select(id) {
   e.mission.textContent = m.title;
   e.goal.textContent = m.goal;
   e.meta.textContent = `MISSION ${m.order} · ${m.category}`;
-  e.lessonCount.textContent = `${m.order} / 4`;
+  e.lessonCount.textContent =
+    m.order + " / " + (lab.episodes[m.episodeIndex]?.missions.length || 0);
   e.accuracy.textContent = "100%";
   e.wpm.textContent = "0";
   e.chars.textContent = "0";
@@ -407,7 +425,7 @@ document.addEventListener("keydown", (x) => {
     openPalette();
   }
 });
-fetch("./data/missions.json")
+fetch("./data/missions.json", { cache: "no-cache" })
   .then((r) => {
     if (!r.ok) throw Error("教材取得失敗");
     return r.json();

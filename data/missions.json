@@ -811,6 +811,4432 @@
           }
         }
       ]
+    },
+    {
+      "id": "ep05",
+      "number": 5,
+      "title": "共有アカウントの深夜ログイン",
+      "subtitle": "認証とセッションの記録を結び付ける",
+      "briefing": "Northstar Labの予約環境で、共有アカウントnorthstar-sharedに深夜の認証記録が残りました。認証失敗・成功、送信元、時刻、ユーザーをauth/sessionログで照合します。記録だけで侵害とは断定せず、追加確認へつなげます。",
+      "missions": [
+        {
+          "id": "ep05-m1",
+          "order": 1,
+          "title": "送信元の失敗を拾う",
+          "goal": "指定した予約IPの認証失敗から時刻と共有アカウントを確認する",
+          "context": "夜間監視がsource=198.51.100.42を検知しました。まずauth.logで同じ送信元の失敗イベントを抽出します。",
+          "category": "認証監査",
+          "command": "grep \"source=198.51.100.42\" auth.log",
+          "tokens": [
+            {
+              "text": "grep",
+              "kind": "command",
+              "meaning": "指定文字列を含むログ行を抽出します。",
+              "why": "監視で得た送信元に調査範囲を絞れます。",
+              "safety": "Northstar Labの模擬ログを読むだけです。"
+            },
+            {
+              "text": "source=198.51.100.42",
+              "kind": "argument",
+              "meaning": "送信元フィールドを含む検索語です。",
+              "why": "別IPの記録を混ぜずに深夜イベントを追えます。",
+              "safety": "文書用IPを文字列検索するだけです。"
+            },
+            {
+              "text": "auth.log",
+              "kind": "argument",
+              "meaning": "認証イベントの入力ログです。",
+              "why": "時刻・ユーザー・結果の出所を固定できます。",
+              "safety": "読み取り専用の教材データです。"
+            }
+          ],
+          "output": "$ grep \"source=198.51.100.42\" auth.log\n2026-08-24T00:17:04Z user=northstar-shared result=failed source=198.51.100.42\n2026-08-24T00:18:11Z user=northstar-shared result=failed source=198.51.100.42",
+          "evidence": "00:17:04Zと00:18:11Zに、northstar-sharedへの失敗が同じ198.51.100.42から2件あります。成功はこの抽出だけでは分かりません。",
+          "handoff": "次はauth.logから成功記録も取り出し、同じユーザーと送信元で時刻を比較します。",
+          "quiz": {
+            "question": "この出力から確認できる事実は？",
+            "choices": [
+              "2件の認証失敗",
+              "認証成功が完了",
+              "IPの所有者",
+              "侵害が確定"
+            ],
+            "answer": 0,
+            "explain": "00:17:04Zと00:18:11Zのresult=failedが、同一ユーザー・IPの2件を示します。成功やIP所有者までは示しません。"
+          }
+        },
+        {
+          "id": "ep05-m2",
+          "order": 2,
+          "title": "成功記録を切り出す",
+          "goal": "成功したセッションの時刻・ユーザー・送信元を抽出する",
+          "context": "2件の失敗直後に成功があったかを確かめます。auth.logの各行から時刻・ユーザー・結果・送信元を並べます。",
+          "category": "認証監査",
+          "command": "awk '{print $1,$2,$3,$4}' auth.log",
+          "tokens": [
+            {
+              "text": "awk",
+              "kind": "command",
+              "meaning": "行を空白区切りのフィールドとして加工します。",
+              "why": "認証行の時刻と属性を同じ形式で比較できます。",
+              "safety": "入力ログを表示用に加工するだけです。"
+            },
+            {
+              "text": "'{print $1,$2,$3,$4}'",
+              "kind": "argument",
+              "meaning": "1〜4列を出力するawkの処理指定です。",
+              "why": "時刻・ユーザー・結果・送信元を失わずに並べます。",
+              "safety": "出力整形であり、ログ内容は変更しません。"
+            },
+            {
+              "text": "auth.log",
+              "kind": "argument",
+              "meaning": "認証記録を読むファイルです。",
+              "why": "失敗と成功を同じ出所で照合できます。",
+              "safety": "模擬ファイルだけを参照します。"
+            }
+          ],
+          "output": "$ awk '{print $1,$2,$3,$4}' auth.log\n2026-08-24T00:17:04Z user=northstar-shared result=failed source=198.51.100.42\n2026-08-24T00:18:11Z user=northstar-shared result=failed source=198.51.100.42\n2026-08-24T00:19:03Z user=northstar-shared result=success source=198.51.100.42",
+          "evidence": "失敗2件の約1分後、00:19:03Zに同じユーザー・IPの成功が1件あります。成功は認証結果を示しますが、利用者本人かは分かりません。",
+          "handoff": "次はsession.logのユーザー列をcutで取り出し、成功セッションの主体を別ログで確認します。",
+          "quiz": {
+            "question": "awk出力で成功を示す欄は？",
+            "choices": [
+              "最初の時刻",
+              "result=success",
+              "user欄",
+              "sourceのIP"
+            ],
+            "answer": 1,
+            "explain": "00:19:03Zの行にresult=successがあり、認証処理が成功した記録だと読めます。"
+          }
+        },
+        {
+          "id": "ep05-m3",
+          "order": 3,
+          "title": "セッションの主体を照合する",
+          "goal": "session.logからユーザー値を抽出し、認証ログとの一致を確認する",
+          "context": "auth.logでは共有アカウントの成功を確認しました。次にセッション開始記録からuser値を分離し、誰のセッションとして記録されたかを見ます。",
+          "category": "セッション監査",
+          "command": "cut -d= -f2 session-users.log",
+          "tokens": [
+            {
+              "text": "cut",
+              "kind": "command",
+              "meaning": "行を区切り文字で分け、指定フィールドを抜き出します。",
+              "why": "user=の値だけを一覧にして照合できます。",
+              "safety": "ログを読み取るだけでセッションは操作しません。"
+            },
+            {
+              "text": "-d=",
+              "kind": "option",
+              "meaning": "等号をフィールド区切りに指定します。",
+              "why": "user=northstar-sharedの値を分離できます。",
+              "safety": "解析方法の指定で、設定は変更しません。"
+            },
+            {
+              "text": "-f2",
+              "kind": "option",
+              "meaning": "等号の右側にあたる2列目を選びます。",
+              "why": "属性名を除いたユーザー値を比較できます。",
+              "safety": "表示する列だけを選びます。"
+            },
+            {
+              "text": "session-users.log",
+              "kind": "argument",
+              "meaning": "セッション開始時のuser属性を記録したログです。",
+              "why": "認証後に開始された主体を確認できます。",
+              "safety": "架空のセッション記録です。"
+            }
+          ],
+          "output": "$ cut -d= -f2 session-users.log\nnorthstar-shared\nnorthstar-shared\nmaintenance-bot",
+          "evidence": "セッション記録にはnorthstar-sharedが2行あり、認証成功の主体名と一致します。maintenance-botも別に1行あります。",
+          "handoff": "次は同一ユーザーのセッション数をuniq -cで数え、深夜の繰り返しと別主体を区別します。",
+          "quiz": {
+            "question": "cutの-d=が指定するものは？",
+            "choices": [
+              "UTCへの変換",
+              "2番目のIP",
+              "等号の区切り",
+              "出力ファイル"
+            ],
+            "answer": 2,
+            "explain": "-d=は等号を区切り文字にする指定で、-f2と組み合わせてuser属性の値を抜き出します。"
+          }
+        },
+        {
+          "id": "ep05-m4",
+          "order": 4,
+          "title": "主体別の回数を数える",
+          "goal": "セッション主体ごとの件数を数え、成功後の動きを整理する",
+          "context": "session-users.logからnorthstar-sharedが複数回出たことが分かりました。値を並べ替えてから回数を数えます。",
+          "category": "セッション監査",
+          "command": "sort session-users.log | uniq -c",
+          "tokens": [
+            {
+              "text": "sort",
+              "kind": "command",
+              "meaning": "入力行を並べ替えて出力します。",
+              "why": "同じ主体を隣接させ、重複数を正しく数えます。",
+              "safety": "結果の並びだけを変えます。"
+            },
+            {
+              "text": "session-users.log",
+              "kind": "argument",
+              "meaning": "主体名を含む入力ログです。",
+              "why": "認証後のセッション記録を集計できます。",
+              "safety": "読み取り専用の模擬ログです。"
+            },
+            {
+              "text": "|",
+              "kind": "operator",
+              "meaning": "sortの出力を次のコマンドへ渡します。",
+              "why": "並べ替え済みの行をuniqへ連携できます。",
+              "safety": "教材内の標準出力を渡すだけです。"
+            },
+            {
+              "text": "uniq",
+              "kind": "command",
+              "meaning": "連続する同一行をまとめます。",
+              "why": "主体別の出現回数を確認できます。",
+              "safety": "集計のみで、入力は変更しません。"
+            },
+            {
+              "text": "-c",
+              "kind": "option",
+              "meaning": "まとめた行数を先頭に表示します。",
+              "why": "共有アカウントの反復回数を記録できます。",
+              "safety": "件数表示の指定だけです。"
+            }
+          ],
+          "output": "$ sort session-users.log | uniq -c\n      1 maintenance-bot\n      2 northstar-shared",
+          "evidence": "northstar-sharedは2セッション、maintenance-botは1セッションです。回数は多さを示しますが、正当性や操作内容は証明しません。",
+          "handoff": "最後に成功セッションのチケット・端末情報を読み、追加確認が必要な点を判断します。",
+          "quiz": {
+            "question": "uniq -cの2は何を表す？",
+            "choices": [
+              "IPの末尾",
+              "時刻差2分",
+              "成功を2回保証",
+              "共有主体の2行"
+            ],
+            "answer": 3,
+            "explain": "出力の2はnorthstar-sharedという同一行が2回現れた件数です。成功内容や正当性までは保証しません。"
+          }
+        },
+        {
+          "id": "ep05-m5",
+          "order": 5,
+          "title": "追加確認へ引き継ぐ",
+          "goal": "成功セッションの周辺証拠を読み、侵害を断定せず確認事項を整理する",
+          "context": "失敗2件、成功1件、共有主体2セッションという流れが見えました。session.logでチケットと端末属性を確認して判断します。",
+          "category": "判断と引継ぎ",
+          "command": "grep \"northstar-shared\" session.log",
+          "tokens": [
+            {
+              "text": "grep",
+              "kind": "command",
+              "meaning": "指定主体を含むセッション行を抽出します。",
+              "why": "成功直後のチケットや端末情報を集められます。",
+              "safety": "監査ログの読み取りだけで、対象は変更しません。"
+            },
+            {
+              "text": "northstar-shared",
+              "kind": "argument",
+              "meaning": "共有アカウントを指定する検索語です。",
+              "why": "別主体のセッションを除いて流れを確定できます。",
+              "safety": "識別子検索であり、ログイン操作ではありません。"
+            },
+            {
+              "text": "session.log",
+              "kind": "argument",
+              "meaning": "開始時刻・端末・チケットを含むセッション記録です。",
+              "why": "認証結果を業務上の承認情報と照合できます。",
+              "safety": "Northstar Labの模擬証拠です。"
+            }
+          ],
+          "output": "$ grep \"northstar-shared\" session.log\n2026-08-24T00:19:03Z user=northstar-shared source=198.51.100.42 ticket=NONE host=lab-console-2 result=success\n2026-08-24T00:20:10Z user=northstar-shared source=198.51.100.42 action=read-report ticket=NS-392",
+          "evidence": "成功セッションはticket=NONEで始まり、1分後にread-reportがNS-392で記録されています。業務承認の有無はNS-392の台帳確認が必要です。",
+          "handoff": "EP06では、この00:19Z前後の証跡をUTCとローカル時刻、NTP状態をそろえて再確認します。侵害断定は保留します。",
+          "quiz": {
+            "question": "この段階の適切な判断は？",
+            "choices": [
+              "追加台帳確認へ進む",
+              "記録を削除",
+              "侵害成功と断定",
+              "共有アカウントを停止"
+            ],
+            "answer": 0,
+            "explain": "成功と操作は記録されていますが、開始行ticket=NONEの意味は台帳照合が必要です。ログだけで侵害とは断定しません。"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ep06",
+      "number": 6,
+      "title": "時刻のずれた監査証跡",
+      "subtitle": "UTC・ローカル時刻とNTP状態を正規化する",
+      "briefing": "EP05の00:19Z付近を再確認すると、監査ログのローカル表記がUTCとずれていました。現在のUTC、NTP同期状態、複数ログの順序を読み取り、時刻の不一致が判断へ与える影響を整理します。",
+      "missions": [
+        {
+          "id": "ep06-m1",
+          "order": 1,
+          "title": "基準UTCを記録する",
+          "goal": "現在の教材端末が示すUTCを基準時刻として記録する",
+          "context": "EP05の00:19Z成功とlocal 09:19表記を比較する前に、基準となるUTCを取得します。",
+          "category": "時刻監査",
+          "command": "date -u",
+          "tokens": [
+            {
+              "text": "date",
+              "kind": "command",
+              "meaning": "端末の現在時刻を表示します。",
+              "why": "監査で使う基準時刻を記録できます。",
+              "safety": "時刻表示だけで端末時刻は変更しません。"
+            },
+            {
+              "text": "-u",
+              "kind": "option",
+              "meaning": "UTCで表示する指定です。",
+              "why": "ログのZ表記と同じ基準へそろえられます。",
+              "safety": "表示基準のみを変えます。"
+            }
+          ],
+          "output": "$ date -u\nMon Aug 24 00:31:22 UTC 2026",
+          "evidence": "基準表示は2026-08-24 00:31:22 UTCです。EP05の00:19Zはこの基準と同じUTC軸で読めます。",
+          "handoff": "次はtimedatectl statusでローカルゾーンとNTP同期の状態を確認します。",
+          "quiz": {
+            "question": "date -uの-uは何を選ぶ？",
+            "choices": [
+              "ユーザー一覧",
+              "UTC表示",
+              "更新日時",
+              "暗号化方式"
+            ],
+            "answer": 1,
+            "explain": "-uはUTC表示を選び、Z付きログと同じ時間軸で比較するために使います。"
+          }
+        },
+        {
+          "id": "ep06-m2",
+          "order": 2,
+          "title": "同期状態を読む",
+          "goal": "タイムゾーンとNTP同期の有無を確認する",
+          "context": "UTCの基準を記録しました。次に、local表記がどのゾーンで、時計がNTPに同期しているかを確認します。",
+          "category": "時刻監査",
+          "command": "timedatectl status",
+          "tokens": [
+            {
+              "text": "timedatectl",
+              "kind": "command",
+              "meaning": "システム時刻・ゾーン・同期状態を表示します。",
+              "why": "時刻ずれの原因候補を端末設定から確認できます。",
+              "safety": "状態を読むだけで時刻設定は変更しません。"
+            },
+            {
+              "text": "status",
+              "kind": "argument",
+              "meaning": "現在の状態を表示するサブコマンドです。",
+              "why": "NTPやzoneの観測値をまとめて得られます。",
+              "safety": "設定変更サブコマンドではありません。"
+            }
+          ],
+          "output": "$ timedatectl status\nTime zone: Asia/Tokyo (JST, +0900)\nSystem clock synchronized: no\nNTP service: active",
+          "evidence": "localはUTC+09:00ですが、NTP serviceはactiveでもSystem clock synchronizedはnoです。稼働中と同期済みは同じ意味ではありません。",
+          "handoff": "次はaudit.logのtimestamp欄を抽出し、UTCとlocalの表記を並べて比較します。",
+          "quiz": {
+            "question": "この結果から読める状態は？",
+            "choices": [
+              "NTP同期済み",
+              "時計が停止",
+              "UTC+09で未同期",
+              "外部接続成功"
+            ],
+            "answer": 2,
+            "explain": "Asia/TokyoはUTC+09ですが、synchronized=noなのでNTPサービスがactiveでも同期完了とは言えません。"
+          }
+        },
+        {
+          "id": "ep06-m3",
+          "order": 3,
+          "title": "二つの表記を抽出する",
+          "goal": "監査ログからUTC・local・イベント属性を取り出す",
+          "context": "端末はUTC+09で未同期でした。audit.logに同一イベントの両表記があるため、timestampとイベントを抽出します。",
+          "category": "時刻監査",
+          "command": "grep timestamp audit.log",
+          "tokens": [
+            {
+              "text": "grep",
+              "kind": "command",
+              "meaning": "timestampを含む行を抽出します。",
+              "why": "時刻表記とユーザー・結果を同時に確認できます。",
+              "safety": "模擬監査ログの検索だけです。"
+            },
+            {
+              "text": "timestamp",
+              "kind": "argument",
+              "meaning": "時刻フィールドを示す検索語です。",
+              "why": "複数の時計表記を持つ行へ絞れます。",
+              "safety": "検索語であり時刻設定を操作しません。"
+            },
+            {
+              "text": "audit.log",
+              "kind": "argument",
+              "meaning": "監査イベントの入力ログです。",
+              "why": "EP05の成功記録と同じイベントを照合できます。",
+              "safety": "読み取り専用の教材ログです。"
+            }
+          ],
+          "output": "$ grep timestamp audit.log\nutc=2026-08-24T00:19:03Z local=2026-08-24T09:18:41+09:00 user=northstar-shared result=success ticket=NS-392\nutc=2026-08-24T00:20:10Z local=2026-08-24T09:19:48+09:00 user=northstar-shared action=read-report ticket=NS-392",
+          "evidence": "同じticket=NS-392でもlocal表記はUTC+09に対して22秒と22秒ずつ早く、時計ずれの可能性があります。行の順序だけで実時間を確定できません。",
+          "handoff": "次はsortでUTC列を基準にイベント順を並べ、local表記による逆転がないか確認します。",
+          "quiz": {
+            "question": "audit.logのutc欄の利点は？",
+            "choices": [
+              "主体を隠す",
+              "ログを書き換える",
+              "NTPを有効化",
+              "共通の時刻軸"
+            ],
+            "answer": 3,
+            "explain": "utc=...Zは共通のUTC軸を提供しますが、local値とのずれは同期状態と併せて評価します。"
+          }
+        },
+        {
+          "id": "ep06-m4",
+          "order": 4,
+          "title": "UTC順に並べる",
+          "goal": "複数ログをUTC列で並べ、イベントの順序を正規化する",
+          "context": "local時刻が少し早く記録されていました。events.logをUTC列で並べ、認証・操作・監査の順序を確認します。",
+          "category": "時刻監査",
+          "command": "sort -k1,1 events.log",
+          "tokens": [
+            {
+              "text": "sort",
+              "kind": "command",
+              "meaning": "指定キーで行を並べ替えます。",
+              "why": "時計表記が混在した証跡の順序を比較できます。",
+              "safety": "表示順だけを変え、入力ログは変更しません。"
+            },
+            {
+              "text": "-k1,1",
+              "kind": "option",
+              "meaning": "1列目だけを並べ替えキーにします。",
+              "why": "正規化済みUTC列を基準にできます。",
+              "safety": "ソート条件の指定だけです。"
+            },
+            {
+              "text": "events.log",
+              "kind": "argument",
+              "meaning": "UTCとlocalを含む統合イベントログです。",
+              "why": "複数ログの順序を一つの証拠で確認できます。",
+              "safety": "Northstar Labの模擬ログを読むだけです。"
+            }
+          ],
+          "output": "$ sort -k1,1 events.log\n2026-08-24T00:19:03Z auth success user=northstar-shared ticket=NS-392\n2026-08-24T00:20:10Z read-report user=northstar-shared ticket=NS-392\n2026-08-24T00:21:02Z audit-note clock-drift=22s ticket=NS-392",
+          "evidence": "UTC順ではauth success→read-report→audit-noteの順です。22秒のずれは順序の信頼度を下げますが、イベント自体の発生を消しません。",
+          "handoff": "最後に正規化した時系列から確定事項・要再収集データ・次のNTP確認を引き継ぎます。",
+          "quiz": {
+            "question": "-k1,1で基準にした列は？",
+            "choices": [
+              "UTCの1列目",
+              "ticket列",
+              "ユーザー列",
+              "localの末尾"
+            ],
+            "answer": 0,
+            "explain": "-k1,1は先頭列だけをキーにし、events.logのUTCタイムスタンプ順へそろえます。"
+          }
+        },
+        {
+          "id": "ep06-m5",
+          "order": 5,
+          "title": "時刻証跡の限界を報告する",
+          "goal": "正規化結果とNTP未同期を結び、追加収集事項を判断する",
+          "context": "UTC順は復元できましたが、端末は同期済みではありません。最後に監査メモで、どの結論を保留すべきか確認します。",
+          "category": "判断と引継ぎ",
+          "command": "awk '{print $1,$2,$3}' events.log",
+          "tokens": [
+            {
+              "text": "awk",
+              "kind": "command",
+              "meaning": "イベントの先頭3列を整形して表示します。",
+              "why": "正規化したUTC・イベント・主体を報告用にそろえます。",
+              "safety": "表示整形のみでログは変更しません。"
+            },
+            {
+              "text": "'{print $1,$2,$3}'",
+              "kind": "argument",
+              "meaning": "先頭3フィールドを出力する処理指定です。",
+              "why": "時刻順とイベント種別の抜粋を作れます。",
+              "safety": "抽出処理であり外部通信はありません。"
+            },
+            {
+              "text": "events.log",
+              "kind": "argument",
+              "meaning": "正規化対象のイベントログです。",
+              "why": "報告の根拠となる行を再提示できます。",
+              "safety": "架空の入力を読むだけです。"
+            }
+          ],
+          "output": "$ awk '{print $1,$2,$3}' events.log\n2026-08-24T00:19:03Z auth success\n2026-08-24T00:20:10Z read-report northstar-shared\n2026-08-24T00:21:02Z audit-note clock-drift=22s",
+          "evidence": "UTC順の3イベントと22秒のclock-driftを簡潔に示せます。ただし、端末未同期のため秒単位の前後関係は再収集が必要です。",
+          "handoff": "EP07では、同じNS-392の配布ファイルについてbaseline hashと更新時刻を照合し、改変範囲を特定します。",
+          "quiz": {
+            "question": "m5で保留すべき結論は？",
+            "choices": [
+              "イベントが3件ある",
+              "秒単位の厳密順序",
+              "UTC列が存在する",
+              "NTPが未同期"
+            ],
+            "answer": 1,
+            "explain": "clock-drift=22sとsynchronized=noがあるため、イベントの存在は言えても秒単位の厳密な前後は保留します。"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ep07",
+      "number": 7,
+      "title": "改変された配布ファイル",
+      "subtitle": "ハッシュ・更新時刻・配布記録を突き合わせる",
+      "briefing": "時刻監査で整えたNS-392の証跡に、配布ファイルrelease.binの差分疑いが加わりました。baseline hash、チェック結果、stat、更新時刻、配布記録を読み、復旧せず調査範囲だけを確定します。",
+      "missions": [
+        {
+          "id": "ep07-m1",
+          "order": 1,
+          "title": "基準ハッシュを読む",
+          "goal": "baselineに記録されたrelease.binのSHA-256値を確認する",
+          "context": "EP06でNS-392のイベント順をUTCへ正規化しました。まず、配布記録が示す基準ハッシュを読みます。",
+          "category": "完全性監査",
+          "command": "sha256sum baseline/release.bin",
+          "tokens": [
+            {
+              "text": "sha256sum",
+              "kind": "command",
+              "meaning": "ファイル内容からSHA-256ハッシュを計算します。",
+              "why": "後で実ファイルの計算値と比較する基準を得ます。",
+              "safety": "読み取りのみでファイルを変更しません。"
+            },
+            {
+              "text": "baseline/release.bin",
+              "kind": "argument",
+              "meaning": "基準保管場所の配布ファイルです。",
+              "why": "承認済みとされる内容の値を固定できます。",
+              "safety": "Northstar Labの模擬ファイルです。"
+            }
+          ],
+          "output": "$ sha256sum baseline/release.bin\n9f2a1c...7b40  baseline/release.bin",
+          "evidence": "baseline/release.binの基準SHA-256は9f2a1c...7b40です。省略表示のため、値は教材内の照合キーとして扱います。",
+          "handoff": "次は配布先release.binをsha256sum -cで基準ファイルと機械的に照合します。",
+          "quiz": {
+            "question": "sha256sumの値が主に示すものは？",
+            "choices": [
+              "通信ポート",
+              "所有ユーザー",
+              "内容の指紋",
+              "更新承認者"
+            ],
+            "answer": 2,
+            "explain": "SHA-256はファイル内容の指紋で、baselineとの一致・不一致を確認する材料です。"
+          }
+        },
+        {
+          "id": "ep07-m2",
+          "order": 2,
+          "title": "配布物を検査する",
+          "goal": "チェックファイルを使いrelease.binの一致結果を確認する",
+          "context": "基準値9f2a1c...7b40を確認しました。配布先のチェック結果を読み、値が一致するかを判定します。",
+          "category": "完全性監査",
+          "command": "sha256sum -c baseline/release.sha256",
+          "tokens": [
+            {
+              "text": "sha256sum",
+              "kind": "command",
+              "meaning": "チェックファイルのSHA-256値を検証します。",
+              "why": "基準値と配布先の内容差を安全に確認できます。",
+              "safety": "検証のみで修復や上書きはしません。"
+            },
+            {
+              "text": "-c",
+              "kind": "option",
+              "meaning": "ファイルに書かれたチェック値を使います。",
+              "why": "手入力の比較ミスを減らせます。",
+              "safety": "検査オプションでファイルは変更しません。"
+            },
+            {
+              "text": "baseline/release.sha256",
+              "kind": "argument",
+              "meaning": "対象名と基準ハッシュを記したチェックファイルです。",
+              "why": "release.binの期待値を明示的に参照できます。",
+              "safety": "模擬チェック記録だけを読みます。"
+            }
+          ],
+          "output": "$ sha256sum -c baseline/release.sha256\nrelease.bin: FAILED\nsha256sum: WARNING: 1 computed checksum did NOT match",
+          "evidence": "配布先release.binはbaselineの期待値と一致しません。これは内容差を示しますが、原因や悪意までは確定しません。",
+          "handoff": "次はstatで所有者・サイズ・更新時刻を読み、差分がいつ起きた可能性があるかを絞ります。",
+          "quiz": {
+            "question": "FAILEDが意味することは？",
+            "choices": [
+              "削除が完了",
+              "配布が成功",
+              "所有者が正当",
+              "内容が基準と不一致"
+            ],
+            "answer": 3,
+            "explain": "FAILEDは計算したハッシュが基準値と不一致という意味で、改変者や原因を特定する表示ではありません。"
+          }
+        },
+        {
+          "id": "ep07-m3",
+          "order": 3,
+          "title": "属性と時刻を確認する",
+          "goal": "statからサイズ・所有者・更新時刻を記録する",
+          "context": "ハッシュ不一致を確認しました。内容を戻さず、まずファイル属性とmtimeを証拠として読み取ります。",
+          "category": "完全性監査",
+          "command": "stat release.bin",
+          "tokens": [
+            {
+              "text": "stat",
+              "kind": "command",
+              "meaning": "ファイルの属性・サイズ・時刻を表示します。",
+              "why": "更新時刻を配布記録や監査時刻と比較できます。",
+              "safety": "属性参照だけで内容や権限を変更しません。"
+            },
+            {
+              "text": "release.bin",
+              "kind": "argument",
+              "meaning": "検査対象の配布ファイルです。",
+              "why": "ハッシュ不一致の対象を同じ名前で追跡できます。",
+              "safety": "架空の対象ファイルを読むだけです。"
+            }
+          ],
+          "output": "$ stat release.bin\nFile: release.bin\nSize: 18432  Owner: deploy-bot\nModify: 2026-08-24 00:20:32 UTC",
+          "evidence": "release.binは18432 bytes、Owner=deploy-bot、mtime=00:20:32 UTCです。所有者は変更主体を証明せず、時刻も端末同期の影響を受けます。",
+          "handoff": "次はfind -newermtで00:20:00以降に更新された配布関連ファイルを範囲特定します。",
+          "quiz": {
+            "question": "statのModifyが示すものは？",
+            "choices": [
+              "最終更新時刻",
+              "内容のハッシュ",
+              "実行成功",
+              "通信元IP"
+            ],
+            "answer": 0,
+            "explain": "Modifyはファイルの更新時刻です。00:20:32 UTCという値だけでは誰が変更したかは分かりません。"
+          }
+        },
+        {
+          "id": "ep07-m4",
+          "order": 4,
+          "title": "更新範囲を絞る",
+          "goal": "指定時刻以降に更新されたファイル一覧を読み、調査範囲を決める",
+          "context": "release.binは00:20:32 UTCに更新されていました。NS-392のread-report直後を基準に、同時刻以降のファイルを確認します。",
+          "category": "完全性監査",
+          "command": "find . -newermt \"2026-08-24 00:20:00\" -type f",
+          "tokens": [
+            {
+              "text": "find",
+              "kind": "command",
+              "meaning": "条件に一致するファイルを探します。",
+              "why": "更新時刻の近い対象だけへ調査範囲を限定できます。",
+              "safety": "一覧表示だけで、削除や変更はしません。"
+            },
+            {
+              "text": ".",
+              "kind": "argument",
+              "meaning": "現在の教材調査ディレクトリを起点にします。",
+              "why": "ケース内の関連ファイルを漏れなく調べます。",
+              "safety": "Northstar Labの仮想ディレクトリです。"
+            },
+            {
+              "text": "-newermt",
+              "kind": "option",
+              "meaning": "指定した時刻より新しいmtimeを選びます。",
+              "why": "read-report後に更新された候補を絞れます。",
+              "safety": "検索条件のみでファイルを触りません。"
+            },
+            {
+              "text": "\"2026-08-24 00:20:00\"",
+              "kind": "argument",
+              "meaning": "更新時刻の比較基準です。",
+              "why": "EP06で正規化したUTCに合わせられます。",
+              "safety": "文書用の時刻を比較するだけです。"
+            },
+            {
+              "text": "-type",
+              "kind": "option",
+              "meaning": "ファイル種別を指定します。",
+              "why": "通常ファイルだけを一覧にできます。",
+              "safety": "一覧条件の指定です。"
+            },
+            {
+              "text": "f",
+              "kind": "argument",
+              "meaning": "通常ファイルを表す種別値です。",
+              "why": "ディレクトリを候補から除外します。",
+              "safety": "読み取り検索で変更はありません。"
+            }
+          ],
+          "output": "$ find . -newermt \"2026-08-24 00:20:00\" -type f\n./release.bin\n./manifest.json\n./staging/release.bin",
+          "evidence": "00:20:00 UTC以降の候補はrelease.bin、manifest.json、staging/release.binです。範囲は絞れましたが、どれが正規配布物かは記録照合が必要です。",
+          "handoff": "最後に配布記録とmanifestをgrepし、チケット・ハッシュ・対象経路の食い違いを確認します。",
+          "quiz": {
+            "question": "findの結果から言えることは？",
+            "choices": [
+              "改変者が確定",
+              "3件が更新候補",
+              "侵害が成功",
+              "復旧が完了"
+            ],
+            "answer": 1,
+            "explain": "指定時刻より新しい通常ファイルが3件見つかっただけで、改変者や侵害の成否は別の証拠が必要です。"
+          }
+        },
+        {
+          "id": "ep07-m5",
+          "order": 5,
+          "title": "改変範囲を引き継ぐ",
+          "goal": "配布記録とハッシュ不一致を照合し、復旧せず次工程を決める",
+          "context": "ハッシュ不一致、mtime、3候補のファイル一覧がそろいました。配布記録からNS-392と正規経路の対応を確認します。",
+          "category": "判断と引継ぎ",
+          "command": "grep \"release.bin\" package-record.log",
+          "tokens": [
+            {
+              "text": "grep",
+              "kind": "command",
+              "meaning": "配布対象名を含む記録行を抽出します。",
+              "why": "チケット・期待ハッシュ・経路を同じ行で照合できます。",
+              "safety": "記録の読み取りだけで配布操作はしません。"
+            },
+            {
+              "text": "release.bin",
+              "kind": "argument",
+              "meaning": "調査中の配布ファイル名です。",
+              "why": "manifestやstagingの別名を混ぜずに確認できます。",
+              "safety": "検索語として扱います。"
+            },
+            {
+              "text": "package-record.log",
+              "kind": "argument",
+              "meaning": "配布台帳の入力ログです。",
+              "why": "正規ファイルの承認範囲と期待値を確かめられます。",
+              "safety": "模擬台帳のみを参照します。"
+            }
+          ],
+          "output": "$ grep \"release.bin\" package-record.log\n2026-08-24T00:19:58Z ticket=NS-392 path=/srv/release.bin expected=9f2a1c...7b40 actor=deploy-bot\n2026-08-24T00:20:32Z ticket=NONE path=/srv/release.bin hash=4d88be...21aa actor=unknown",
+          "evidence": "NS-392の正規値は9f2a1c...7b40ですが、00:20:32 UTCにticket=NONE・actor=unknownの値4d88be...21aaが記録されています。改変範囲と未承認記録は確定しますが、復旧は行いません。",
+          "handoff": "EP08では、同時刻に監視エージェントが停止していないか、systemctl・journalctl・ps・ssの読み取りで確認します。",
+          "quiz": {
+            "question": "m5で確定できる範囲は？",
+            "choices": [
+              "攻撃者の身元",
+              "自動復旧の完了",
+              "未承認値と時刻",
+              "秘密鍵の内容"
+            ],
+            "answer": 2,
+            "explain": "ticket=NONE、actor=unknown、mtime=00:20:32とハッシュ差は示せますが、身元や復旧結果はこのログから分かりません。"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ep08",
+      "number": 8,
+      "title": "停止した監視エージェント",
+      "subtitle": "停止時刻・理由・通信欠落を読み解く",
+      "briefing": "EP07で未承認のrelease.bin更新が00:20:32 UTCに記録されました。同じ時間帯にNorthstar監視エージェントの観測が途切れています。サービスを操作せず、状態・ジャーナル・プロセス・待受を読み、停止の事実と理由の候補を分けます。",
+      "missions": [
+        {
+          "id": "ep08-m1",
+          "order": 1,
+          "title": "サービス状態を読む",
+          "goal": "systemctl statusでエージェントの稼働状態と停止時刻を確認する",
+          "context": "未承認更新の直後に監視欠落が報告されました。まずnorthstar-agentの現在状態を読み取ります。",
+          "category": "監視監査",
+          "command": "systemctl status northstar-agent",
+          "tokens": [
+            {
+              "text": "systemctl",
+              "kind": "command",
+              "meaning": "systemdサービスの状態を表示します。",
+              "why": "監視機能の稼働状態と直近時刻を確認できます。",
+              "safety": "status表示だけで、起動停止操作はしません。"
+            },
+            {
+              "text": "status",
+              "kind": "argument",
+              "meaning": "サービス状態を表示する指定です。",
+              "why": "停止理由の手掛かりと最終状態を得られます。",
+              "safety": "読み取り専用のサブコマンドです。"
+            },
+            {
+              "text": "northstar-agent",
+              "kind": "argument",
+              "meaning": "監視エージェントのサービス名です。",
+              "why": "対象を明示し他サービスを混ぜません。",
+              "safety": "Northstar Labの模擬サービス名です。"
+            }
+          ],
+          "output": "$ systemctl status northstar-agent\n● northstar-agent.service - Northstar monitor\n   Active: failed (Result: exit-code) since 2026-08-24 00:20:41 UTC\n   Process: 812 ExecStart=/opt/northstar-agent --config /etc/northstar.test.conf",
+          "evidence": "northstar-agentは00:20:41 UTCからfailedです。statusだけでは停止の根本原因や未承認更新との因果は断定できません。",
+          "handoff": "次はjournalctl -uで停止直前の終了理由とエラーを読みます。",
+          "quiz": {
+            "question": "statusが直接示す事実は？",
+            "choices": [
+              "設定を修正",
+              "原因が攻撃と確定",
+              "再起動が成功",
+              "00:20:41にfailed"
+            ],
+            "answer": 3,
+            "explain": "Active: failed ... since 00:20:41 UTCは停止状態と時刻を示しますが、原因や攻撃性までは確定しません。"
+          }
+        },
+        {
+          "id": "ep08-m2",
+          "order": 2,
+          "title": "終了理由を読む",
+          "goal": "journalctlから停止直前のエラーと設定読み込み結果を確認する",
+          "context": "statusで00:20:41 UTCのfailedを確認しました。ジャーナルから直前のログを読み、exit-codeの手掛かりを集めます。",
+          "category": "監視監査",
+          "command": "journalctl -u northstar-agent",
+          "tokens": [
+            {
+              "text": "journalctl",
+              "kind": "command",
+              "meaning": "systemdジャーナルの記録を表示します。",
+              "why": "サービス停止前後の時刻・エラーを追跡できます。",
+              "safety": "ログ参照だけでサービスを操作しません。"
+            },
+            {
+              "text": "-u",
+              "kind": "option",
+              "meaning": "指定ユニットの記録に絞ります。",
+              "why": "northstar-agent以外のログを除外できます。",
+              "safety": "検索範囲を限定するだけです。"
+            },
+            {
+              "text": "northstar-agent",
+              "kind": "argument",
+              "meaning": "確認対象のサービスユニット名です。",
+              "why": "停止原因の出所をサービス単位で固定できます。",
+              "safety": "模擬ユニットのログを読むだけです。"
+            }
+          ],
+          "output": "$ journalctl -u northstar-agent\n2026-08-24T00:20:40Z northstar-agent[812]: loading /etc/northstar.test.conf\n2026-08-24T00:20:41Z northstar-agent[812]: ERROR config checksum mismatch\n2026-08-24T00:20:41Z systemd[1]: northstar-agent: main process exited, code=exited, status=1/FAILURE",
+          "evidence": "設定ファイルのchecksum mismatch後にstatus=1で終了しています。設定差分は示唆されますが、誰が変更したかやrelease.binとの因果は未確認です。",
+          "handoff": "次はpsで終了後にエージェントプロセスが残っていないかを読み、状態を別観測で裏付けます。",
+          "quiz": {
+            "question": "journalctlで停止直前に出たものは？",
+            "choices": [
+              "checksum mismatch",
+              "DNS成功",
+              "認証成功",
+              "復旧完了"
+            ],
+            "answer": 0,
+            "explain": "00:20:41Zにconfig checksum mismatch、その直後にstatus=1/FAILUREが記録されています。"
+          }
+        },
+        {
+          "id": "ep08-m3",
+          "order": 3,
+          "title": "プロセス残存を確認する",
+          "goal": "psの読み取りでエージェントプロセスが残っていないことを確認する",
+          "context": "ジャーナルはchecksum mismatch後の終了を示しました。psの一覧から、停止後に同名プロセスが残存しているか確認します。",
+          "category": "監視監査",
+          "command": "ps -ef",
+          "tokens": [
+            {
+              "text": "ps",
+              "kind": "command",
+              "meaning": "実行中プロセスの一覧を表示します。",
+              "why": "サービス状態とプロセス実体を別の観測で照合できます。",
+              "safety": "一覧表示だけでプロセスを停止・起動しません。"
+            },
+            {
+              "text": "-ef",
+              "kind": "option",
+              "meaning": "全ユーザーの詳細プロセスを表示します。",
+              "why": "agentのPIDやコマンド行の残存を見落としにくくします。",
+              "safety": "表示条件のみを指定します。"
+            }
+          ],
+          "output": "$ ps -ef\nroot 1 0 0 00:00 ? 00:00:01 init\nops 913 1 0 00:20 ? 00:00:00 log-reader --case NS-392\n(no northstar-agent process)",
+          "evidence": "ps一覧にはnorthstar-agentがなく、status/journalの停止と整合します。ただしプロセス不在だけでは停止原因や通信欠落の全期間は分かりません。",
+          "handoff": "次はssでエージェント用の待受・接続状態を読み、停止後の通信欠落を別証拠で確認します。",
+          "quiz": {
+            "question": "psの(no process)が示すことは？",
+            "choices": [
+              "agentが稼働中",
+              "agentプロセス不在",
+              "原因が特定済み",
+              "通信が復旧"
+            ],
+            "answer": 1,
+            "explain": "psにnorthstar-agent processがないため、観測時点でプロセスが残っていないと読めます。"
+          }
+        },
+        {
+          "id": "ep08-m4",
+          "order": 4,
+          "title": "通信の欠落を読む",
+          "goal": "ssの読み取りで監視ポートの待受・接続有無を確認する",
+          "context": "プロセス一覧でもagent不在を確認しました。監視用ポートの状態をssで読み、通信が途切れた時間帯を絞ります。",
+          "category": "監視監査",
+          "command": "ss -lnt",
+          "tokens": [
+            {
+              "text": "ss",
+              "kind": "command",
+              "meaning": "ソケットとTCP状態を表示します。",
+              "why": "監視ポートの待受が残っているか確認できます。",
+              "safety": "接続一覧の参照だけで通信を発生させません。"
+            },
+            {
+              "text": "-lnt",
+              "kind": "option",
+              "meaning": "待受・数値表示・TCPに絞ります。",
+              "why": "名前解決をせず、監視用TCP待受を明確に見られます。",
+              "safety": "読み取りオプションで設定変更はありません。"
+            }
+          ],
+          "output": "$ ss -lnt\nState Recv-Q Send-Q Local Address:Port\nLISTEN 0 128 192.0.2.1:22\n(no 192.0.2.1:9443 monitor listener)",
+          "evidence": "監視用192.0.2.1:9443の待受がありません。通信欠落の観測とは整合しますが、ネットワーク障害かサービス停止かは単独では区別できません。",
+          "handoff": "最後にmonitor-gap.logを時刻・サービス・チケットで確認し、停止の影響範囲と追加復旧担当を引き継ぎます。",
+          "quiz": {
+            "question": "ss出力から確認できることは？",
+            "choices": [
+              "原因が攻撃確定",
+              "外部接続を実行",
+              "9443が待受なし",
+              "秘密鍵を取得"
+            ],
+            "answer": 2,
+            "explain": "192.0.2.1:9443 monitor listenerがないため、監視ポートが待受していないことを確認できます。"
+          }
+        },
+        {
+          "id": "ep08-m5",
+          "order": 5,
+          "title": "監視欠落を引き継ぐ",
+          "goal": "停止時刻・理由・通信欠落をまとめ、復旧担当への確認事項を決める",
+          "context": "status・journalctl・ps・ssが同じ時間帯の停止を示しました。monitor-gap.logで欠落範囲とチケットを確認して判断します。",
+          "category": "判断と引継ぎ",
+          "command": "grep \"northstar-agent\" monitor-gap.log",
+          "tokens": [
+            {
+              "text": "grep",
+              "kind": "command",
+              "meaning": "サービス名を含む監視欠落行を抽出します。",
+              "why": "停止時刻・欠落対象・チケットを結び付けます。",
+              "safety": "監視記録の検索だけでサービスへ操作しません。"
+            },
+            {
+              "text": "northstar-agent",
+              "kind": "argument",
+              "meaning": "監視対象サービス名の検索語です。",
+              "why": "別エージェントの欠落を混ぜません。",
+              "safety": "識別子を検索するだけです。"
+            },
+            {
+              "text": "monitor-gap.log",
+              "kind": "argument",
+              "meaning": "監視受信の欠落を記録したログです。",
+              "why": "通信欠落の開始・影響・承認情報を確認できます。",
+              "safety": "Northstar Labの模擬ログです。"
+            }
+          ],
+          "output": "$ grep \"northstar-agent\" monitor-gap.log\n2026-08-24T00:20:41Z service=northstar-agent heartbeat=missing source=198.51.100.42 ticket=NS-392\n2026-08-24T00:23:00Z service=northstar-agent heartbeat=restored source=198.51.100.42 ticket=NS-401",
+          "evidence": "NS-392の00:20:41Zにheartbeatがmissingとなり、NS-401の00:23:00Zにrestoredです。checksum mismatchとの時間的一致はありますが、因果は追加確認が必要です。",
+          "handoff": "EP09では、同じsource=198.51.100.42にAPIの404急増がないか、access.logのpath・request_id・結果を相関します。",
+          "quiz": {
+            "question": "m5の妥当な結論は？",
+            "choices": [
+              "停止原因は攻撃確定",
+              "外部IPへ接続",
+              "agentを削除",
+              "欠落と復旧時刻を記録"
+            ],
+            "answer": 3,
+            "explain": "00:20:41Zのmissingと00:23:00Zのrestored、各ticketは記録できますが、原因の断定や操作は次工程です。"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ep09",
+      "number": 9,
+      "title": "APIで急増した404",
+      "subtitle": "探索痕跡と通常障害をアクセスログで分ける",
+      "briefing": "EP08で監視欠落が00:20:41 UTCに始まりました。同じ予約IPからAPIの404が急増したという報告を、access.logのstatus・path・source・request_idで検証します。404だけで侵入や攻撃を断定せず、通常障害との違いを整理します。",
+      "missions": [
+        {
+          "id": "ep09-m1",
+          "order": 1,
+          "title": "404行を抽出する",
+          "goal": "access.logから404応答の時刻・path・sourceを確認する",
+          "context": "監視欠落と同じsource=198.51.100.42がAPIを呼んだか調べます。最初に404行だけを抽出します。",
+          "category": "API監査",
+          "command": "grep \"status=404\" access.log",
+          "tokens": [
+            {
+              "text": "grep",
+              "kind": "command",
+              "meaning": "指定文字列を含むアクセス行を抽出します。",
+              "why": "404応答のまとまりを確認できます。",
+              "safety": "模擬アクセスログを読むだけです。"
+            },
+            {
+              "text": "status=404",
+              "kind": "argument",
+              "meaning": "見つからない要求を示す検索語です。",
+              "why": "成功や500を混ぜず、対象エラーに絞れます。",
+              "safety": "接続や再要求は行いません。"
+            },
+            {
+              "text": "access.log",
+              "kind": "argument",
+              "meaning": "APIアクセス記録の入力ファイルです。",
+              "why": "時刻・path・sourceの根拠を残せます。",
+              "safety": "Northstar Lab内の架空ログです。"
+            }
+          ],
+          "output": "$ grep \"status=404\" access.log\n2026-08-24T00:19:54Z path=/v1/health source=198.51.100.42 request_id=rq-701 status=404\n2026-08-24T00:20:02Z path=/v1/admin source=198.51.100.42 request_id=rq-702 status=404\n2026-08-24T00:20:05Z path=/v1/backup source=198.51.100.42 request_id=rq-703 status=404",
+          "evidence": "00:19:54〜00:20:05 UTCに同一IPから3件の404があり、/v1/health・/v1/admin・/v1/backupが対象です。404は未提供の可能性もあります。",
+          "handoff": "次はawkでpath・source・request_id・statusを列として抜き、個々のリクエストを追跡します。",
+          "quiz": {
+            "question": "404抽出だけで言えないことは？",
+            "choices": [
+              "侵入成功の有無",
+              "対象path",
+              "3件の記録",
+              "送信元IP"
+            ],
+            "answer": 0,
+            "explain": "404行は要求の記録を示しますが、サーバー侵入やデータ取得の成功までは表しません。"
+          }
+        },
+        {
+          "id": "ep09-m2",
+          "order": 2,
+          "title": "要求属性を分解する",
+          "goal": "各404行からpath・source・request_id・statusを並べる",
+          "context": "3件の404と具体的pathを確認しました。awkで属性を抜き出し、後続の同一request_id照合に使います。",
+          "category": "API監査",
+          "command": "awk '{print $2,$3,$4,$5}' access.log",
+          "tokens": [
+            {
+              "text": "awk",
+              "kind": "command",
+              "meaning": "アクセス行をフィールド単位で整形します。",
+              "why": "path・source・request_id・statusを比較しやすくします。",
+              "safety": "表示整形だけでAPIへ再接続しません。"
+            },
+            {
+              "text": "'{print $2,$3,$4,$5}'",
+              "kind": "argument",
+              "meaning": "2〜5列を出力する処理指定です。",
+              "why": "対象属性だけを抜き出して相関できます。",
+              "safety": "入力ログを変更しません。"
+            },
+            {
+              "text": "access.log",
+              "kind": "argument",
+              "meaning": "APIリクエストを記録したログです。",
+              "why": "各request_idの出所を保ちます。",
+              "safety": "模擬ログの読み取りです。"
+            }
+          ],
+          "output": "$ awk '{print $2,$3,$4,$5}' access.log\npath=/v1/health source=198.51.100.42 request_id=rq-701 status=404\npath=/v1/admin source=198.51.100.42 request_id=rq-702 status=404\npath=/v1/backup source=198.51.100.42 request_id=rq-703 status=404",
+          "evidence": "3要求は同じsourceで、request_idがrq-701〜703と一意です。属性の一致は同一送信元の連続要求を示しますが、意図は決められません。",
+          "handoff": "次はpath列をsortし、定型healthチェックと管理系pathが混在しているかを並べ替えで見ます。",
+          "quiz": {
+            "question": "request_idが役立つ理由は？",
+            "choices": [
+              "IPを暗号化",
+              "個別要求を追跡",
+              "404を成功化",
+              "時刻を修正"
+            ],
+            "answer": 1,
+            "explain": "rq-701〜703のようなrequest_idは、各要求をアプリログや監査記録へ追跡する手掛かりです。"
+          }
+        },
+        {
+          "id": "ep09-m3",
+          "order": 3,
+          "title": "pathの種類を並べる",
+          "goal": "アクセス記録をpath順に並べ、healthと管理系要求を分類する",
+          "context": "同一IP・異なるrequest_idの404がありました。pathを並べ替え、通常のヘルスチェックと探索候補を分けます。",
+          "category": "API監査",
+          "command": "sort -k2,2 access.log",
+          "tokens": [
+            {
+              "text": "sort",
+              "kind": "command",
+              "meaning": "指定した列を基準に行を並べます。",
+              "why": "pathの種類を一覧し、比較しやすくします。",
+              "safety": "並び順の変更だけでログは書き換えません。"
+            },
+            {
+              "text": "-k2,2",
+              "kind": "option",
+              "meaning": "2列目だけをキーにする指定です。",
+              "why": "path列の順序で分類できます。",
+              "safety": "表示条件だけを指定し、内容は変更しません。"
+            },
+            {
+              "text": "access.log",
+              "kind": "argument",
+              "meaning": "APIアクセスの入力ログです。",
+              "why": "成功・404を含む全体像を保ったまま並べます。",
+              "safety": "外部APIへの通信はありません。"
+            }
+          ],
+          "output": "$ sort -k2,2 access.log\n2026-08-24T00:19:54Z path=/v1/health source=198.51.100.42 request_id=rq-701 status=404\n2026-08-24T00:20:02Z path=/v1/admin source=198.51.100.42 request_id=rq-702 status=404\n2026-08-24T00:20:05Z path=/v1/backup source=198.51.100.42 request_id=rq-703 status=404\n2026-08-24T00:20:07Z path=/v1/health source=203.0.113.55 request_id=rq-704 status=200",
+          "evidence": "healthには404と200の両方があり、/v1/adminと/backupは404です。healthの404は通常設定不一致の可能性があり、全404を探索とは扱えません。",
+          "handoff": "次はsourceとstatusの組み合わせをuniq -cで集計し、急増が特定IPだけかを確認します。",
+          "quiz": {
+            "question": "healthの404から分かることは？",
+            "choices": [
+              "必ず探索",
+              "侵入成功",
+              "設定不一致もあり得る",
+              "request_id不要"
+            ],
+            "answer": 2,
+            "explain": "/v1/healthは同じログで200もあり、404はAPI仕様や時点の設定不一致の可能性を残します。"
+          }
+        },
+        {
+          "id": "ep09-m4",
+          "order": 4,
+          "title": "送信元別に集計する",
+          "goal": "sourceとstatusの組み合わせを数え、急増の偏りを確認する",
+          "context": "path分類でhealthの通常応答も見えました。source/statusをまとめて並べ、404がどの送信元に偏るか集計します。",
+          "category": "API監査",
+          "command": "sort -k3,3 -k5,5 access.log | uniq -c",
+          "tokens": [
+            {
+              "text": "sort",
+              "kind": "command",
+              "meaning": "複数キーでアクセス行を並べ替えます。",
+              "why": "同一source・statusを隣接させて数えられます。",
+              "safety": "ログ表示の順序だけを変更します。"
+            },
+            {
+              "text": "-k3,3",
+              "kind": "option",
+              "meaning": "source列を第一キーにします。",
+              "why": "送信元ごとの偏りを見ます。",
+              "safety": "集計条件の指定です。"
+            },
+            {
+              "text": "-k5,5",
+              "kind": "option",
+              "meaning": "status列を第二キーにします。",
+              "why": "同じ送信元の404と200を分けます。",
+              "safety": "読み取り専用で、内容は変更しません。"
+            },
+            {
+              "text": "access.log",
+              "kind": "argument",
+              "meaning": "集計対象のAPIアクセスログです。",
+              "why": "要求数の根拠を維持します。",
+              "safety": "模擬ファイルだけを参照します。"
+            },
+            {
+              "text": "|",
+              "kind": "operator",
+              "meaning": "sortの出力をuniqへ渡します。",
+              "why": "同一source/status行のまとまりを件数化できます。",
+              "safety": "教材内の出力連携だけです。"
+            },
+            {
+              "text": "uniq",
+              "kind": "command",
+              "meaning": "連続する同一行をまとめます。",
+              "why": "同じ属性の要求数を確認できます。",
+              "safety": "入力を変更しません。"
+            },
+            {
+              "text": "-c",
+              "kind": "option",
+              "meaning": "各まとまりの行数を表示します。",
+              "why": "404急増の規模を比較できます。",
+              "safety": "件数表示だけで、元データは変更しません。"
+            }
+          ],
+          "output": "$ sort -k3,3 -k5,5 access.log | uniq -c\n      1 ... source=198.51.100.42 request_id=rq-701 status=404\n      1 ... source=198.51.100.42 request_id=rq-702 status=404\n      1 ... source=198.51.100.42 request_id=rq-703 status=404\n      1 ... source=203.0.113.55 request_id=rq-704 status=200",
+          "evidence": "この行全体にはrequest_idが含まれるため各行が一意で、uniqの件数は各1です。3件の404が198.51.100.42に集中する事実は別途数える必要があります。",
+          "handoff": "最後に404-summary.logの集約結果をheadで読み、探索痕跡か通常障害かの暫定判断と確認先を引き継ぎます。",
+          "quiz": {
+            "question": "この集計で各1になる理由は？",
+            "choices": [
+              "全件が成功",
+              "sortが通信した",
+              "IPが消えた",
+              "request_idが各行で異なる"
+            ],
+            "answer": 3,
+            "explain": "rq-701〜704が行ごとに違うため、行全体では同一にならず各1件として残ります。"
+          }
+        },
+        {
+          "id": "ep09-m5",
+          "order": 5,
+          "title": "急増の意味を保留する",
+          "goal": "集約済みの404結果と通常障害の記録を読み、追加確認を引き継ぐ",
+          "context": "同一IPに3つの異なる404 request_idがありました。集約処理済みのsummaryを読み、意図を断定せず次の確認を決めます。",
+          "category": "判断と引継ぎ",
+          "command": "head -5 404-summary.log",
+          "tokens": [
+            {
+              "text": "head",
+              "kind": "command",
+              "meaning": "入力の先頭行だけを表示します。",
+              "why": "集約済みの上位候補を短く確認できます。",
+              "safety": "ログを読むだけで要求は再送しません。"
+            },
+            {
+              "text": "-5",
+              "kind": "option",
+              "meaning": "先頭5行を表示する指定です。",
+              "why": "報告対象を限定して確認できます。",
+              "safety": "表示行数だけを制限します。"
+            },
+            {
+              "text": "404-summary.log",
+              "kind": "argument",
+              "meaning": "404の集約結果を記したログです。",
+              "why": "時刻・source・path・判定メモを引き継げます。",
+              "safety": "Northstar Labの模擬集約ファイルです。"
+            }
+          ],
+          "output": "$ head -5 404-summary.log\n2026-08-24T00:19:54Z source=198.51.100.42 count=3 paths=/v1/health,/v1/admin,/v1/backup\nassessment=exploration-like sequence; no successful privileged response observed\nnormal-check source=203.0.113.55 path=/v1/health status=200\nrequest_ids=rq-701,rq-702,rq-703 ticket=NS-401",
+          "evidence": "198.51.100.42の3要求は探索に似た順序ですが、成功した特権応答は観測されていません。NS-401、request_id群、通常の200応答をアプリ担当へ渡します。",
+          "handoff": "EP10では、NS-401の配布対象northstar.testのTLS証明書を読み、期限切れか差し替えミスかをDNS・配布記録と照合します。",
+          "quiz": {
+            "question": "404急増の適切な表現は？",
+            "choices": [
+              "探索らしいが要照合",
+              "侵入成功と断定",
+              "記録は無価値",
+              "全404を正常扱い"
+            ],
+            "answer": 0,
+            "explain": "3件の連続pathは探索らしい一方、privileged response成功はありません。request_idとNS-401を使う追加照合が必要です。"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ep10",
+      "number": 10,
+      "title": "期限外のTLS証明書",
+      "subtitle": "証明書の期限と配布経路を照合する",
+      "briefing": "EP09で引き継いだNS-401のAPI配布記録に、northstar.testのTLS証明書警告があります。秘密鍵には触れず、openssl x509の公開メタデータ、DNS記録、ファイル属性、配布台帳を照合し、期限切れか差し替えミスかを判断します。",
+      "missions": [
+        {
+          "id": "ep10-m1",
+          "order": 1,
+          "title": "公開証明書を読む",
+          "goal": "証明書のsubject・issuer・有効期間を読み取る",
+          "context": "NS-401のAPI障害とTLS警告を確認します。公開証明書ファイルのメタデータだけをopensslで表示します。",
+          "category": "TLS監査",
+          "command": "openssl x509 -in northstar.test.pem -noout -subject -issuer -dates",
+          "tokens": [
+            {
+              "text": "openssl",
+              "kind": "command",
+              "meaning": "暗号・証明書情報を扱うツールです。",
+              "why": "公開証明書の属性を読み取れます。",
+              "safety": "秘密鍵操作や接続は行わず、表示だけに限定します。"
+            },
+            {
+              "text": "x509",
+              "kind": "argument",
+              "meaning": "X.509証明書を扱うサブコマンドです。",
+              "why": "subject・issuer・期限のメタデータを確認できます。",
+              "safety": "証明書の公開情報だけを解析します。"
+            },
+            {
+              "text": "-in",
+              "kind": "option",
+              "meaning": "入力証明書ファイルを指定します。",
+              "why": "対象ファイルを明示して別証明書を混ぜません。",
+              "safety": "入力指定のみで秘密鍵を読みません。"
+            },
+            {
+              "text": "northstar.test.pem",
+              "kind": "argument",
+              "meaning": "予約ドメイン用の公開証明書ファイルです。",
+              "why": "NS-401の配布対象と照合できます。",
+              "safety": "northstar.testの模擬証明書で、秘密鍵ではありません。"
+            },
+            {
+              "text": "-noout",
+              "kind": "option",
+              "meaning": "証明書本体を出力せず属性だけ表示します。",
+              "why": "公開メタデータに調査を限定できます。",
+              "safety": "証明書を再発行・変更しません。"
+            },
+            {
+              "text": "-subject",
+              "kind": "option",
+              "meaning": "証明書の主体名を表示します。",
+              "why": "対象ドメインの一致を確認できます。",
+              "safety": "公開属性の表示です。"
+            },
+            {
+              "text": "-issuer",
+              "kind": "option",
+              "meaning": "発行者名を表示します。",
+              "why": "想定した訓練CAかを照合できます。",
+              "safety": "公開属性だけを読みます。"
+            },
+            {
+              "text": "-dates",
+              "kind": "option",
+              "meaning": "notBeforeとnotAfterを表示します。",
+              "why": "基準時刻に対して有効期間を判定できます。",
+              "safety": "期限表示だけで更新操作はしません。"
+            }
+          ],
+          "output": "$ openssl x509 -in northstar.test.pem -noout -subject -issuer -dates\nsubject=CN=northstar.test\nissuer=CN=Northstar Lab Training CA\nnotBefore=Aug 20 00:00:00 2026 GMT\nnotAfter=Aug 23 23:59:59 2026 GMT",
+          "evidence": "subjectはnorthstar.test、issuerは訓練CA、notAfterは2026-08-23 23:59:59 GMTです。現在の2026-08-24 UTC基準では期限外ですが、配布先とDNSの一致確認が必要です。",
+          "handoff": "次はDNS記録でnorthstar.testがどの証明書IDを配布先へ向けているか確認します。",
+          "quiz": {
+            "question": "notAfterが示すものは？",
+            "choices": [
+              "発行者名",
+              "有効期限の終点",
+              "秘密鍵の場所",
+              "APIの404数"
+            ],
+            "answer": 1,
+            "explain": "notAfter=Aug 23 23:59:59 2026 GMTは証明書の有効期間の終点で、Aug 24 UTCには期限外です。"
+          }
+        },
+        {
+          "id": "ep10-m2",
+          "order": 2,
+          "title": "DNSの証明書IDを照合する",
+          "goal": "DNS配布記録の名前・証明書ID・更新時刻を確認する",
+          "context": "証明書は期限外でした。次に、northstar.testのDNS記録がどの証明書IDと配布先を示しているかを読みます。",
+          "category": "TLS監査",
+          "command": "grep \"northstar.test\" dns-record.log",
+          "tokens": [
+            {
+              "text": "grep",
+              "kind": "command",
+              "meaning": "指定ドメインを含むDNS記録行を抽出します。",
+              "why": "証明書IDと配布先の対応を確認できます。",
+              "safety": "予約ドメインの模擬記録を読むだけです。"
+            },
+            {
+              "text": "northstar.test",
+              "kind": "argument",
+              "meaning": "訓練用の証明書対象名です。",
+              "why": "別サービスのDNS記録を混ぜません。",
+              "safety": "実在ドメインへ問い合わせません。"
+            },
+            {
+              "text": "dns-record.log",
+              "kind": "argument",
+              "meaning": "DNSと証明書IDの配布履歴です。",
+              "why": "証明書ファイルと経路の対応を追跡できます。",
+              "safety": "外部通信なしの教材ログです。"
+            }
+          ],
+          "output": "$ grep \"northstar.test\" dns-record.log\n2026-08-24T00:22:10Z name=northstar.test target=198.51.100.88 cert_id=cert-old-17 ticket=NS-401",
+          "evidence": "DNS記録はnorthstar.testを198.51.100.88へ向け、cert-old-17をNS-401で記録しています。opensslで読んだファイルのIDはまだ照合していません。",
+          "handoff": "次はstatで公開証明書ファイルの更新時刻と所有者を読み、DNS更新との前後関係を確認します。",
+          "quiz": {
+            "question": "DNS記録で照合できるものは？",
+            "choices": [
+              "秘密鍵の中身",
+              "侵入者の身元",
+              "名前とcert_id",
+              "API本文"
+            ],
+            "answer": 2,
+            "explain": "DNS記録にはname、target、cert_id、ticketがあり、対象名と証明書IDの対応を確認できます。"
+          }
+        },
+        {
+          "id": "ep10-m3",
+          "order": 3,
+          "title": "証明書ファイルの属性を見る",
+          "goal": "statから証明書の更新時刻・所有者・サイズを記録する",
+          "context": "DNSはcert-old-17を示しました。配布先のnorthstar.test.pemがいつ更新され、誰の所有かを属性だけで確認します。",
+          "category": "TLS監査",
+          "command": "stat northstar.test.pem",
+          "tokens": [
+            {
+              "text": "stat",
+              "kind": "command",
+              "meaning": "ファイル属性と時刻を表示します。",
+              "why": "DNS更新・配布台帳とmtimeを比較できます。",
+              "safety": "公開証明書の属性参照だけです。"
+            },
+            {
+              "text": "northstar.test.pem",
+              "kind": "argument",
+              "meaning": "調査対象の公開証明書ファイルです。",
+              "why": "opensslで読んだファイルと同じ対象を固定します。",
+              "safety": "秘密鍵ファイルは対象にしません。"
+            }
+          ],
+          "output": "$ stat northstar.test.pem\nFile: northstar.test.pem\nSize: 1288  Owner: deploy-bot\nModify: 2026-08-24 00:22:09 UTC",
+          "evidence": "証明書ファイルは00:22:09 UTCにdeploy-bot所有で更新され、DNS記録の00:22:10 UTC直前です。mtimeは更新時刻の手掛かりですが、内容の正当性や作業者は証明しません。",
+          "handoff": "次はdeploy-record.logでcert-old-17と新証明書の配布記録・承認チケットを照合します。",
+          "quiz": {
+            "question": "mtimeだけで断定できないことは？",
+            "choices": [
+              "更新時刻の手掛かり",
+              "所有者表示",
+              "ファイルサイズ",
+              "内容の正当性"
+            ],
+            "answer": 3,
+            "explain": "mtimeは00:22:09 UTCという属性を示しますが、更新内容が正しいか、誰が実行したかは別記録が必要です。"
+          }
+        },
+        {
+          "id": "ep10-m4",
+          "order": 4,
+          "title": "配布台帳を読む",
+          "goal": "旧証明書と新証明書の配布記録・チケットを比較する",
+          "context": "DNSとファイル更新は連続していますが、opensslの証明書は期限外です。台帳でcert_idと承認チケットの組み合わせを確認します。",
+          "category": "TLS監査",
+          "command": "grep \"cert-\" deploy-record.log",
+          "tokens": [
+            {
+              "text": "grep",
+              "kind": "command",
+              "meaning": "証明書IDを含む配布記録を抽出します。",
+              "why": "旧版・新版とチケットの対応を比較できます。",
+              "safety": "配布操作をせず台帳を読むだけです。"
+            },
+            {
+              "text": "cert-",
+              "kind": "argument",
+              "meaning": "証明書IDの共通検索語です。",
+              "why": "cert-old-17とcert-new-42の両方を拾えます。",
+              "safety": "文字列検索で秘密鍵には触れません。"
+            },
+            {
+              "text": "deploy-record.log",
+              "kind": "argument",
+              "meaning": "証明書配布の履歴台帳です。",
+              "why": "配布者・ID・期限・承認を照合できます。",
+              "safety": "Northstar Labの模擬記録です。"
+            }
+          ],
+          "output": "$ grep \"cert-\" deploy-record.log\n2026-08-24T00:21:40Z ticket=NS-401 cert_id=cert-new-42 valid_to=2026-09-30 actor=deploy-bot target=staging\n2026-08-24T00:22:09Z ticket=NONE cert_id=cert-old-17 valid_to=2026-08-23 actor=unknown target=198.51.100.88",
+          "evidence": "NS-401で有効期限が09-30のcert-new-42はstaging向け、00:22:09Zの実配布先にはticket=NONEのcert-old-17が入りました。差し替えミスの強い証拠ですが、作業者の身元は未確定です。",
+          "handoff": "最後にcert-review.logの判定メモを読み、期限切れと配布先の取り違えを分けて次工程へ引き継ぎます。",
+          "quiz": {
+            "question": "台帳から最も重要な不一致は？",
+            "choices": [
+              "旧版が実配布先へ",
+              "新証明書がstaging向け",
+              "actorがdeploy-bot",
+              "IDが文字列"
+            ],
+            "answer": 0,
+            "explain": "cert-new-42はstaging向けなのに、実配布先198.51.100.88には期限外cert-old-17がticket=NONEで記録されています。"
+          }
+        },
+        {
+          "id": "ep10-m5",
+          "order": 5,
+          "title": "期限外の原因を判定する",
+          "goal": "証明書・DNS・配布台帳を総合し、差し替えミスとして引き継ぐ",
+          "context": "期限外の公開証明書、DNSのcert-old-17、staging向けcert-new-42がそろいました。判定メモから、復旧操作をせず次の担当へ事実を渡します。",
+          "category": "判断と引継ぎ",
+          "command": "grep \"cert-old-17\" cert-review.log",
+          "tokens": [
+            {
+              "text": "grep",
+              "kind": "command",
+              "meaning": "旧証明書IDを含むレビュー行を抽出します。",
+              "why": "期限判定と原因仮説を根拠行で確認できます。",
+              "safety": "レビュー記録を読むだけで証明書を操作しません。"
+            },
+            {
+              "text": "cert-old-17",
+              "kind": "argument",
+              "meaning": "実配布先で観測された旧証明書IDです。",
+              "why": "openssl・DNS・台帳の同一対象を結び付けます。",
+              "safety": "公開IDの検索で秘密鍵を扱いません。"
+            },
+            {
+              "text": "cert-review.log",
+              "kind": "argument",
+              "meaning": "証明書照合の監査メモです。",
+              "why": "期限切れか差し替え経路ミスかの判断を確認できます。",
+              "safety": "模擬レビュー記録の参照のみです。"
+            }
+          ],
+          "output": "$ grep \"cert-old-17\" cert-review.log\n2026-08-24T00:23:12Z cert_id=cert-old-17 status=expired dns_match=yes deploy_target_mismatch=yes ticket=NS-401\nassessment=expired certificate served because new cert remained in staging; verify change window before remediation",
+          "evidence": "cert-old-17は期限切れ、DNS対象は一致し、new証明書がstagingに残る配布先ミスが示されています。NS-401の変更窓と承認者を確認してから復旧します。",
+          "handoff": "EP10の引継ぎは、秘密鍵操作なしでNS-401の変更窓・配布承認・stagingから本番への経路を確認することです。復旧は承認済み担当に委ねます。",
+          "quiz": {
+            "question": "最も妥当な暫定判断は？",
+            "choices": [
+              "鍵漏えいが確定",
+              "期限外＋配布先ミス",
+              "DNS攻撃が確定",
+              "証明書は有効"
+            ],
+            "answer": 1,
+            "explain": "opensslのnotAfter、DNSのcert-old-17、台帳のstaging/newと実配布/oldの食い違いから、期限外と配布先ミスを暫定判断できます。"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ep11",
+      "number": 11,
+      "title": "なりすましメールのヘッダー",
+      "subtitle": "保存済みヘッダーと添付ハッシュを照合する",
+      "briefing": "Northstar Labに保存されたmail-header.txtを読み、表示上のFromだけで判断せずReturn-Path、Received、SPF、DKIM、Message-IDを関連付けます。添付は開かず、既知ハッシュとの一致だけを確認します。",
+      "missions": [
+        {
+          "id": "ep11-m1",
+          "order": 1,
+          "title": "保存済みヘッダーを読む",
+          "goal": "ヘッダー全体から観測対象と受信時刻を把握する",
+          "context": "EP10から引き継いだticket=NS-401、actor=mail-reviewerの確認対象です。まず保存済みヘッダーを変更せず読みます。",
+          "category": "メール監査",
+          "command": "cat mail-header.txt",
+          "tokens": [
+            {
+              "text": "cat",
+              "kind": "command",
+              "meaning": "指定ファイルを標準出力へ表示します。",
+              "why": "保存済みヘッダーを一つの証拠源として読み取れます。",
+              "safety": "Northstar Labの架空ファイルを読むだけで、メールを送受信しません。"
+            },
+            {
+              "text": "mail-header.txt",
+              "kind": "argument",
+              "meaning": "模擬メールの保存済みヘッダーファイルです。",
+              "why": "後続のFromや認証結果の出所を固定できます。",
+              "safety": "添付や本文を開かず、ヘッダー文字列だけを読みます。"
+            }
+          ],
+          "output": "$ cat mail-header.txt\nFrom: Billing Desk <billing@northstar.test>\nReturn-Path: bounce@mailer.test\nReceived: from relay.northstar.test (198.51.100.44) by mx.northstar.test; 2026-08-24T08:13:11Z\nAuthentication-Results: mx.northstar.test; spf=fail dkim=none header.from=northstar.test\nMessage-ID: <20260824081311.407@mailer.test>\nX-Attachment: invoice-407.pdf",
+          "evidence": "表示名From、Return-Path、Receivedの送信元198.51.100.44、時刻、Authentication-Results、Message-ID、添付名が同じ保存証拠にあります。",
+          "handoff": "次はFromとReturn-Pathだけを抽出し、表示上の差異を記録します。",
+          "quiz": {
+            "question": "catで最初に確認できるものは？",
+            "choices": [
+              "添付の実行結果",
+              "送信者の実在性",
+              "メール本文の安全性",
+              "保存済みヘッダー全体"
+            ],
+            "answer": 3,
+            "explain": "catは保存済みmail-header.txtの文字列を表示しますが、送信者の実在性や添付の安全性までは断定しません。"
+          }
+        },
+        {
+          "id": "ep11-m2",
+          "order": 2,
+          "title": "FromとReturn-Pathを比較する",
+          "goal": "表示上のFromと配送時のReturn-Pathを別々に記録する",
+          "context": "ヘッダー全体でFrom=northstar.test、Return-Path=mailer.testを確認しました。次に該当行だけを抽出します。",
+          "category": "メール監査",
+          "command": "grep -E '^(From|Return-Path):' mail-header.txt",
+          "tokens": [
+            {
+              "text": "grep",
+              "kind": "command",
+              "meaning": "条件に一致する行を抽出します。",
+              "why": "送信者表示とバウンス経路を簡潔に比較できます。",
+              "safety": "検索だけでヘッダーや配送設定を変更しません。"
+            },
+            {
+              "text": "-E",
+              "kind": "option",
+              "meaning": "拡張正規表現を有効にします。",
+              "why": "FromまたはReturn-Pathという二つの条件を一度に指定できます。",
+              "safety": "検索条件の指定だけで、メール操作は行いません。"
+            },
+            {
+              "text": "'^(From|Return-Path):'",
+              "kind": "argument",
+              "meaning": "行頭のFromまたはReturn-Pathを検索する式です。",
+              "why": "似た語を含む別行を混ぜず、ヘッダー名を限定できます。",
+              "safety": "文字列フィルターとして扱い、外部へ問い合わせません。"
+            },
+            {
+              "text": "mail-header.txt",
+              "kind": "argument",
+              "meaning": "検索対象の保存済みヘッダーです。",
+              "why": "比較結果を同じ証拠ファイルに結び付けられます。",
+              "safety": "架空ファイルの読み取り専用で、内容は変更しません。"
+            }
+          ],
+          "output": "$ grep -E '^(From|Return-Path):' mail-header.txt\nFrom: Billing Desk <billing@northstar.test>\nReturn-Path: bounce@mailer.test",
+          "evidence": "Fromのドメインはnorthstar.test、Return-Pathはmailer.testで一致しません。差異は観測事実ですが、なりすまし成功の単独証明ではありません。",
+          "handoff": "次はReceivedとAuthentication-Resultsを抽出し、経路・SPF・DKIMを同じ時刻の文脈で確認します。",
+          "quiz": {
+            "question": "この抽出から断定できる事実は？",
+            "choices": [
+              "送信者の本人確認済み",
+              "添付が安全",
+              "配送が拒否された",
+              "From/Return-Path差異"
+            ],
+            "answer": 3,
+            "explain": "抽出行では二つのドメインが異なりますが、その差だけで送信者の意図や添付の安全性は断定できません。"
+          }
+        },
+        {
+          "id": "ep11-m3",
+          "order": 3,
+          "title": "経路と認証結果を読む",
+          "goal": "Receivedの時刻・IPとSPF/DKIMの結果を関連付ける",
+          "context": "FromとReturn-Pathの差異を記録しました。次は経路と認証結果を抽出し、ticket=NS-401の監査記録へ結びます。",
+          "category": "メール監査",
+          "command": "grep -E '^(Received|Authentication-Results):' mail-header.txt",
+          "tokens": [
+            {
+              "text": "grep",
+              "kind": "command",
+              "meaning": "一致するヘッダー行を表示します。",
+              "why": "配送経路と認証判定を同じ出力で比較できます。",
+              "safety": "保存証拠の読み取りだけで、配送を再実行しません。"
+            },
+            {
+              "text": "-E",
+              "kind": "option",
+              "meaning": "複数のヘッダー名を正規表現で指定します。",
+              "why": "ReceivedとAuthentication-Resultsを漏れなく抽出できます。",
+              "safety": "検索機能だけを使い、通信は発生しません。"
+            },
+            {
+              "text": "'^(Received|Authentication-Results):'",
+              "kind": "argument",
+              "meaning": "二つのヘッダー名に一致する検索式です。",
+              "why": "経路・時刻・SPF・DKIMの記録へ範囲を限定します。",
+              "safety": "検索語であり、認証機構を変更しません。"
+            },
+            {
+              "text": "mail-header.txt",
+              "kind": "argument",
+              "meaning": "受信済みヘッダーの入力ファイルです。",
+              "why": "結果の出所とticket=NS-401を追跡できます。",
+              "safety": "Northstar Lab内の架空データだけを読みます。"
+            }
+          ],
+          "output": "$ grep -E '^(Received|Authentication-Results):' mail-header.txt\nReceived: from relay.northstar.test (198.51.100.44) by mx.northstar.test; 2026-08-24T08:13:11Z\nAuthentication-Results: mx.northstar.test; spf=fail dkim=none header.from=northstar.test",
+          "evidence": "2026-08-24T08:13:11Zに198.51.100.44から受信し、SPF=fail、DKIM=none、header.from=northstar.testでした。認証失敗は観測できますが、侵害経路までは不明です。",
+          "handoff": "次はMessage-IDとヘッダーの主要値をawkで一行にまとめ、既知のticketと照合します。",
+          "quiz": {
+            "question": "Authentication-Resultsから読める結果は？",
+            "choices": [
+              "spf=pass dkim=pass",
+              "IPが実在と証明",
+              "spf=fail dkim=none",
+              "添付が開封済み"
+            ],
+            "answer": 2,
+            "explain": "保存ヘッダーはspf=failとdkim=noneを示します。これは認証結果であり、実在人物や侵害成功を保証しません。"
+          }
+        },
+        {
+          "id": "ep11-m4",
+          "order": 4,
+          "title": "Message-IDを固定する",
+          "goal": "Message-IDとFrom・Return-Pathを同じレコードとして記録する",
+          "context": "経路198.51.100.44とSPF/DKIMの失敗を確認しました。次に一意なMessage-IDを使って証拠を束ねます。",
+          "category": "メール監査",
+          "command": "awk '/^(Message-ID|From|Return-Path):/ {print}' mail-header.txt",
+          "tokens": [
+            {
+              "text": "awk",
+              "kind": "command",
+              "meaning": "条件に一致した入力行を処理して表示します。",
+              "why": "一意識別子と送信者関連行を同じ順序で記録できます。",
+              "safety": "入力を読むだけで、メールやファイルを書き換えません。"
+            },
+            {
+              "text": "'/^(Message-ID|From|Return-Path):/ {print}'",
+              "kind": "argument",
+              "meaning": "三つのヘッダー名に一致した行を印字するawkプログラムです。",
+              "why": "Message-IDをFrom・Return-Pathの差異と結び付けられます。",
+              "safety": "表示処理だけで、添付の内容には触れません。"
+            },
+            {
+              "text": "mail-header.txt",
+              "kind": "argument",
+              "meaning": "処理対象の保存ヘッダーです。",
+              "why": "識別子の出所を明確に保てます。",
+              "safety": "架空ログの読み取り専用で、内容は変更しません。"
+            }
+          ],
+          "output": "$ awk '/^(Message-ID|From|Return-Path):/ {print}' mail-header.txt\nFrom: Billing Desk <billing@northstar.test>\nReturn-Path: bounce@mailer.test\nMessage-ID: <20260824081311.407@mailer.test>",
+          "evidence": "Message-ID=<20260824081311.407@mailer.test>を、FromとReturn-Pathの差異を持つ一通の証拠として固定しました。",
+          "handoff": "最後に添付を開かずSHA-256を既知リストと照合し、メール単体で断定できる範囲を判断します。",
+          "quiz": {
+            "question": "Message-IDを記録する主な理由は？",
+            "choices": [
+              "メールを再送するため",
+              "本文を実行するため",
+              "IPを変更するため",
+              "一通の証拠を識別するため"
+            ],
+            "answer": 3,
+            "explain": "Message-IDはヘッダー記録を一通の識別子に結び付ける材料で、再送や本文の安全性を意味しません。"
+          }
+        },
+        {
+          "id": "ep11-m5",
+          "order": 5,
+          "title": "添付ハッシュを照合する",
+          "goal": "添付を開かず、既知ハッシュリストとの一致結果を確認する",
+          "context": "ヘッダーのMessage-IDとticket=NS-401を固定しました。添付invoice-407.pdfは開かず、保存済みハッシュだけを照合します。",
+          "category": "メール監査",
+          "command": "sha256sum -c known-hashes.txt",
+          "tokens": [
+            {
+              "text": "sha256sum",
+              "kind": "command",
+              "meaning": "SHA-256チェックサムを計算または検証します。",
+              "why": "添付を開かず、既知の値と同一か確認できます。",
+              "safety": "ファイル内容を実行せず、ハッシュ計算だけを行う模擬操作です。"
+            },
+            {
+              "text": "-c",
+              "kind": "option",
+              "meaning": "指定リストの期待ハッシュと入力ファイルを照合します。",
+              "why": "既知リストとの一致・不一致を結果として記録できます。",
+              "safety": "照合のみで、添付を開いたり変更したりしません。"
+            },
+            {
+              "text": "known-hashes.txt",
+              "kind": "argument",
+              "meaning": "既知のSHA-256値とファイル名を記したリストです。",
+              "why": "invoice-407.pdfの照合基準を明示できます。",
+              "safety": "Northstar Labの架空リストだけを読む検証です。"
+            }
+          ],
+          "output": "$ sha256sum -c known-hashes.txt\ninvoice-407.pdf: FAILED\nsha256sum: WARNING: 1 computed checksum did NOT match",
+          "evidence": "invoice-407.pdfの計算値は既知リストと一致しません。添付は開いていないため、内容やマルウェア性は断定できません。",
+          "handoff": "EP12では、Message-IDとticket=NS-401を手掛かりに、架空クラウド監査ログのactor・MFA・requestIdを相関します。",
+          "quiz": {
+            "question": "FAILEDの結果から適切な判断は？",
+            "choices": [
+              "添付を開いて確認する",
+              "送信者の侵害を断定する",
+              "ハッシュ不一致を記録し隔離判断へ",
+              "既知リストを削除する"
+            ],
+            "answer": 2,
+            "explain": "ハッシュ不一致は重要な観測事実ですが、添付を開かず内容や原因を断定せず、隔離や追加確認を判断します。"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ep12",
+      "number": 12,
+      "title": "クラウド管理操作の連鎖",
+      "subtitle": "架空JSONLのactor・MFA・requestIdを相関する",
+      "briefing": "Northstar Labの架空cloud-audit.jsonlをjqで読み取り、actor、sourceIp、action、resource、result、requestIdとMFA結果を相関します。実クラウド名や認証情報は登場せず、操作の再実行もしません。",
+      "missions": [
+        {
+          "id": "ep12-m1",
+          "order": 1,
+          "title": "管理操作の対象を絞る",
+          "goal": "引き継いだactor=mayaに関連する監査行を抽出する",
+          "context": "EP11のticket=NS-401とMessage-IDを受け、監査記録で対応付けたactor=mayaとsourceIp=203.0.113.17を確認します。",
+          "category": "クラウド監査",
+          "command": "jq -c 'select(.actor==\"maya\")' cloud-audit.jsonl",
+          "tokens": [
+            {
+              "text": "jq",
+              "kind": "command",
+              "meaning": "JSONデータを条件付きで読み取り整形します。",
+              "why": "mayaの監査イベントだけを抽出できます。",
+              "safety": "架空JSONLの読み取り専用で、クラウドAPIを呼びません。"
+            },
+            {
+              "text": "-c",
+              "kind": "option",
+              "meaning": "各JSON結果を一行で出力します。",
+              "why": "イベント単位の相関に使いやすくなります。",
+              "safety": "出力形式だけを変え、データを変更しません。"
+            },
+            {
+              "text": "'select(.actor==\"maya\")'",
+              "kind": "argument",
+              "meaning": "actorがmayaのJSONオブジェクトだけを選びます。",
+              "why": "対象actorを固定して操作の連鎖を追跡できます。",
+              "safety": "選別条件であり、認証や操作を実行しません。"
+            },
+            {
+              "text": "cloud-audit.jsonl",
+              "kind": "argument",
+              "meaning": "クラウド風監査イベントを一行JSONで保存した入力です。",
+              "why": "各イベントのrequestIdと結果の出所を保てます。",
+              "safety": "Northstar Lab内の架空ログのみを参照します。"
+            }
+          ],
+          "output": "$ jq -c 'select(.actor==\"maya\")' cloud-audit.jsonl\n{\"timestamp\":\"2026-08-24T09:02:10Z\",\"actor\":\"maya\",\"sourceIp\":\"203.0.113.17\",\"action\":\"MFA\",\"resource\":\"tenant-lab\",\"result\":\"fail\",\"requestId\":\"req-1201\"}\n{\"timestamp\":\"2026-08-24T09:03:02Z\",\"actor\":\"maya\",\"sourceIp\":\"203.0.113.17\",\"action\":\"read\",\"resource\":\"bucket-lab\",\"result\":\"success\",\"requestId\":\"req-1202\"}",
+          "evidence": "mayaから203.0.113.17のMFA fail(req-1201)とread success(req-1202)が記録されています。因果関係や認証回避はこの抽出だけでは断定できません。",
+          "handoff": "次はactionとMFA結果を全actorから抽出し、MFAイベントと後続操作を時刻・requestIdで比較します。",
+          "quiz": {
+            "question": "m1の出力で確認できる組合せは？",
+            "choices": [
+              "秘密鍵の内容",
+              "実クラウド名",
+              "操作の再実行結果",
+              "actorとMFA/readの結果"
+            ],
+            "answer": 3,
+            "explain": "抽出結果にはactor、sourceIp、action、result、requestIdがありますが、秘密情報や実クラウド操作は含まれません。"
+          }
+        },
+        {
+          "id": "ep12-m2",
+          "order": 2,
+          "title": "MFA結果を分離する",
+          "goal": "MFAイベントの成功・失敗とrequestIdを一覧化する",
+          "context": "mayaのMFA fail後にread successがありました。全ログからMFA行を分離し、同一actor・IP・時刻の関係を確認します。",
+          "category": "クラウド監査",
+          "command": "jq -c 'select(.action==\"MFA\")' cloud-audit.jsonl",
+          "tokens": [
+            {
+              "text": "jq",
+              "kind": "command",
+              "meaning": "JSONオブジェクトを条件で抽出します。",
+              "why": "MFA判定だけを時系列に並べられます。",
+              "safety": "読み取り専用の模擬分析で、MFAを要求しません。"
+            },
+            {
+              "text": "-c",
+              "kind": "option",
+              "meaning": "JSONを一行ずつコンパクトに表示します。",
+              "why": "requestId単位のログ比較に向きます。",
+              "safety": "表示形式の指定だけです。"
+            },
+            {
+              "text": "'select(.action==\"MFA\")'",
+              "kind": "argument",
+              "meaning": "actionがMFAのレコードだけを選びます。",
+              "why": "認証判定と後続readを混同しません。",
+              "safety": "検索条件であり、認証情報を扱いません。"
+            },
+            {
+              "text": "cloud-audit.jsonl",
+              "kind": "argument",
+              "meaning": "MFAを含む架空監査ログです。",
+              "why": "結果の時刻・actor・IP・requestIdを追跡できます。",
+              "safety": "外部通信なしの教材データです。"
+            }
+          ],
+          "output": "$ jq -c 'select(.action==\"MFA\")' cloud-audit.jsonl\n{\"timestamp\":\"2026-08-24T09:02:10Z\",\"actor\":\"maya\",\"sourceIp\":\"203.0.113.17\",\"action\":\"MFA\",\"resource\":\"tenant-lab\",\"result\":\"fail\",\"requestId\":\"req-1201\"}\n{\"timestamp\":\"2026-08-24T09:04:18Z\",\"actor\":\"maya\",\"sourceIp\":\"203.0.113.17\",\"action\":\"MFA\",\"resource\":\"tenant-lab\",\"result\":\"success\",\"requestId\":\"req-1203\"}",
+          "evidence": "maya/203.0.113.17には09:02:10ZのMFA fail(req-1201)と09:04:18ZのMFA success(req-1203)があります。fail後にsuccessがあるため、単一のMFA失敗だけでread成功を説明できません。",
+          "handoff": "次は必要な列をTSV化し、resource・result・requestIdを含めて連鎖を比較します。",
+          "quiz": {
+            "question": "MFA行を分ける利点は？",
+            "choices": [
+              "ログを消せる",
+              "認証判定と操作を分けて比較できる",
+              "権限を付与できる",
+              "外部IPを調べられる"
+            ],
+            "answer": 1,
+            "explain": "MFAイベントを分離すると、認証判定と後続操作を時刻・requestIdで比較できます。"
+          }
+        },
+        {
+          "id": "ep12-m3",
+          "order": 3,
+          "title": "監査列を揃える",
+          "goal": "actor・IP・result・requestIdを一貫した順序で出す",
+          "context": "MFAにfailとsuccessの両方があると分かりました。全イベントをactor・IP・result・requestIdで並べます。",
+          "category": "クラウド監査",
+          "command": "jq -r '[.actor,.sourceIp,.result,.requestId]|@tsv' cloud-audit.jsonl",
+          "tokens": [
+            {
+              "text": "jq",
+              "kind": "command",
+              "meaning": "JSONのフィールドを抽出し変換します。",
+              "why": "イベント比較に必要な列を揃えられます。",
+              "safety": "架空ログの整形だけで、操作を発行しません。"
+            },
+            {
+              "text": "-r",
+              "kind": "option",
+              "meaning": "文字列をJSON引用符なしで出力します。",
+              "why": "TSVとして時系列比較しやすくなります。",
+              "safety": "表示方法だけの変更です。"
+            },
+            {
+              "text": "'[.actor,.sourceIp,.result,.requestId]",
+              "kind": "argument",
+              "meaning": "相関に必要な4フィールドを配列化します。",
+              "why": "actor・IP・結果・reqIDを同じ順で比較できます。",
+              "safety": "フィールド読み取りだけで、値を更新しません。"
+            },
+            {
+              "text": "|",
+              "kind": "operator",
+              "meaning": "jqの配列結果を後段の変換へ渡します。",
+              "why": "配列をTSV一行へ変換できます。",
+              "safety": "JSON内のデータ受け渡しだけです。"
+            },
+            {
+              "text": "@tsv",
+              "kind": "argument",
+              "meaning": "配列をタブ区切り文字列へ変換するjq機能です。",
+              "why": "時刻・actor・結果を目視で横並びにできます。",
+              "safety": "出力整形のみで、ログへ書き込みません。"
+            },
+            {
+              "text": "cloud-audit.jsonl",
+              "kind": "argument",
+              "meaning": "整形対象の架空JSONLです。",
+              "why": "各requestIdの出所を保ちます。",
+              "safety": "Northstar Labの模擬データです。"
+            }
+          ],
+          "output": "$ jq -r '[.actor,.sourceIp,.result,.requestId]|@tsv' cloud-audit.jsonl\nmaya\t203.0.113.17\tfail\treq-1201\nmaya\t203.0.113.17\tsuccess\treq-1202\nmaya\t203.0.113.17\tsuccess\treq-1203",
+          "evidence": "全行でactor=maya、sourceIp=203.0.113.17が続き、各resultとrequestIdを固定できます。時刻とactionはm1・m2の抽出結果と照合します。",
+          "handoff": "次はrequestIdでイベントをグループ化し、同じリクエストID内のイベント数を点検します。",
+          "quiz": {
+            "question": "TSV化で保持される重要列は？",
+            "choices": [
+              "秘密トークン",
+              "実クラウドのURL",
+              "添付本文",
+              "actor・IP・結果・reqId"
+            ],
+            "answer": 3,
+            "explain": "指定配列はactor、sourceIp、result、requestIdを保持します。時刻やactionなどは別の抽出結果で照合します。"
+          }
+        },
+        {
+          "id": "ep12-m4",
+          "order": 4,
+          "title": "requestId単位で束ねる",
+          "goal": "同じrequestIdに属するイベント数を数え、連鎖の単位を確認する",
+          "context": "時系列ではMFAとreadが異なるrequestIdでした。requestIdを単位に束ね、同一要求と別要求を区別します。",
+          "category": "クラウド監査",
+          "command": "jq -s 'group_by(.requestId)[] | {requestId,events:length}' cloud-audit.jsonl",
+          "tokens": [
+            {
+              "text": "jq",
+              "kind": "command",
+              "meaning": "JSONLを集約して読み取ります。",
+              "why": "requestIdごとのイベントまとまりを点検できます。",
+              "safety": "監査ログの集計のみで、クラウド操作をしません。"
+            },
+            {
+              "text": "-s",
+              "kind": "option",
+              "meaning": "入力全体を一つの配列として読み込みます。",
+              "why": "複数行をrequestIdでグループ化できます。",
+              "safety": "メモリ上の集計で、入力を書き換えません。"
+            },
+            {
+              "text": "'group_by(.requestId)[] | {requestId,events:length}'",
+              "kind": "argument",
+              "meaning": "requestIdごとにグループ化し件数を出します。",
+              "why": "同一要求ID内のイベント数を比較できます。",
+              "safety": "読み取りと件数表示だけです。"
+            },
+            {
+              "text": "cloud-audit.jsonl",
+              "kind": "argument",
+              "meaning": "集約する架空監査イベントファイルです。",
+              "why": "requestIdの証拠出所を保持します。",
+              "safety": "外部サービスへ接続しない教材入力です。"
+            }
+          ],
+          "output": "$ jq -s 'group_by(.requestId)[] | {requestId,events:length}' cloud-audit.jsonl\n{\"requestId\":\"req-1201\",\"events\":1}\n{\"requestId\":\"req-1202\",\"events\":1}\n{\"requestId\":\"req-1203\",\"events\":1}",
+          "evidence": "各requestIdは1イベントずつで、MFA failとread successは同一要求ではありません。操作の因果関係は時系列や追加ログなしに断定できません。",
+          "handoff": "最後にactor・IP・MFA・read・ticketの観測を判断メモにまとめ、EP13の模擬コンテナ監査へ引き継ぎます。",
+          "quiz": {
+            "question": "requestIdが異なることの意味は？",
+            "choices": [
+              "必ず同一操作",
+              "必ず攻撃成功",
+              "同一要求とは断定できない",
+              "ログが無効"
+            ],
+            "answer": 2,
+            "explain": "requestIdが異なるため、MFA failとread successを同じ要求として扱えません。関連の可能性は時刻や他証拠で追加確認します。"
+          }
+        },
+        {
+          "id": "ep12-m5",
+          "order": 5,
+          "title": "最終イベント列を整形する",
+          "goal": "最終イベント列を整形し、観測と未確定を分けて引き継ぐ",
+          "context": "MFA・readの時刻、actor=maya、sourceIp=203.0.113.17、requestId=req-1201〜1203を確認しました。最後にactorのイベント列を整形して判断を引き継ぎます。",
+          "category": "クラウド監査",
+          "command": "jq -r 'select(.actor==\"maya\") | [.timestamp,.action,.result,.requestId] | @tsv' cloud-audit.jsonl",
+          "tokens": [
+            {
+              "text": "jq",
+              "kind": "command",
+              "meaning": "対象actorのイベントを整形して表示します。",
+              "why": "引き継ぎに必要な時刻・操作・結果・IDを最終確認できます。",
+              "safety": "読み取り専用の模擬監査です。"
+            },
+            {
+              "text": "-r",
+              "kind": "option",
+              "meaning": "文字列を生のTSVとして出します。",
+              "why": "判断メモへ転記しやすくなります。",
+              "safety": "表示形式だけを変えます。"
+            },
+            {
+              "text": "'select(.actor==\"maya\")",
+              "kind": "argument",
+              "meaning": "actorがmayaの監査行だけを選ぶ式です。",
+              "why": "EP11から引き継いだactorに調査範囲を絞れます。",
+              "safety": "値の選別のみで、権限や操作へ影響しません。"
+            },
+            {
+              "text": "|",
+              "kind": "operator",
+              "meaning": "mayaの行を列選択へ渡します。",
+              "why": "必要なイベント列だけを後段で整形できます。",
+              "safety": "データの受け渡しだけです。"
+            },
+            {
+              "text": "[.timestamp,.action,.result,.requestId]",
+              "kind": "argument",
+              "meaning": "時刻・操作・結果・requestIdを配列化します。",
+              "why": "mayaの抽出結果を時系列で判断できます。",
+              "safety": "値の選別のみで、権限や操作へ影響しません。"
+            },
+            {
+              "text": "|",
+              "kind": "operator",
+              "meaning": "配列をTSV変換へ渡します。",
+              "why": "判断メモへ転記しやすい形式にできます。",
+              "safety": "データの受け渡しだけです。"
+            },
+            {
+              "text": "@tsv",
+              "kind": "argument",
+              "meaning": "配列をTSVへ変換します。",
+              "why": "イベント列を一行で比較できます。",
+              "safety": "整形のみで、元データは変更しません。"
+            },
+            {
+              "text": "cloud-audit.jsonl",
+              "kind": "argument",
+              "meaning": "対象となる架空ログです。",
+              "why": "判断の出所を明確にします。",
+              "safety": "外部通信なしの教材です。"
+            }
+          ],
+          "output": "$ jq -r 'select(.actor==\"maya\") | [.timestamp,.action,.result,.requestId] | @tsv' cloud-audit.jsonl\n2026-08-24T09:02:10Z\tMFA\tfail\treq-1201\n2026-08-24T09:03:02Z\tread\tsuccess\treq-1202\n2026-08-24T09:04:18Z\tMFA\tsuccess\treq-1203",
+          "evidence": "最終イベント列にはMFA fail後のread success、その後のMFA success、各requestIdがあります。req-1202は次工程のticket=NS-411対応表へ引き継ぎますが、read成功の認証経路や意図は確定しません。",
+          "handoff": "EP13では、同じ時刻軸とticket相関の考え方で、lab namespaceのコンテナ再起動と設定変更記録を確認します。",
+          "quiz": {
+            "question": "整形後の最終判断として適切なのは？",
+            "choices": [
+              "侵害成功を断定",
+              "MFAを無効化",
+              "actorを削除",
+              "観測と未確定を分け追加相関"
+            ],
+            "answer": 3,
+            "explain": "成功・失敗とrequestIdは記録できますが、因果や意図は未確定なので、追加監査キーを引き継ぎます。"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ep13",
+      "number": 13,
+      "title": "再起動を繰り返すコンテナ",
+      "subtitle": "lab namespaceのPod証拠を時系列で読む",
+      "briefing": "Northstar Labの架空lab namespaceで、kubectlのget・describe・logs・eventsだけを使います。再起動時刻、image digest、service account、設定変更ticketを関連付けます。exec、apply、deleteは行いません。",
+      "missions": [
+        {
+          "id": "ep13-m1",
+          "order": 1,
+          "title": "Podの再起動回数を見る",
+          "goal": "lab namespace内のPod状態と再起動回数を一覧化する",
+          "context": "EP12のhandoffでrequestId=req-1202→ticket=NS-411の対応表を引き継ぎました。まずlab namespaceのPod状態を読みます。",
+          "category": "コンテナ監査",
+          "command": "kubectl get pods -n lab",
+          "tokens": [
+            {
+              "text": "kubectl",
+              "kind": "command",
+              "meaning": "Kubernetesリソースを表示・確認するCLIです。",
+              "why": "Podの状態と再起動回数を監査できます。",
+              "safety": "getは読み取り専用で、Podへ接続や変更をしません。"
+            },
+            {
+              "text": "get",
+              "kind": "argument",
+              "meaning": "指定リソースの一覧を表示します。",
+              "why": "実行中Podの観測範囲を確定できます。",
+              "safety": "作成・削除・適用は行いません。"
+            },
+            {
+              "text": "pods",
+              "kind": "argument",
+              "meaning": "対象リソースをPodに指定します。",
+              "why": "再起動数を持つワークロードを確認できます。",
+              "safety": "Podの読み取りだけで、対象は変更しません。"
+            },
+            {
+              "text": "-n",
+              "kind": "option",
+              "meaning": "対象namespaceを指定します。",
+              "why": "監査範囲を架空のlabに限定できます。",
+              "safety": "対象範囲の指定で、クラスタ設定を変えません。"
+            },
+            {
+              "text": "lab",
+              "kind": "argument",
+              "meaning": "Northstar Labの模擬namespaceです。",
+              "why": "実環境と混同せず教材対象を固定できます。",
+              "safety": "架空namespaceのみを参照します。"
+            }
+          ],
+          "output": "$ kubectl get pods -n lab\nNAME        READY   STATUS             RESTARTS   AGE\napi-7f9c    1/1     CrashLoopBackOff   5          42m\nworker-2ab1 1/1     Running            0          42m",
+          "evidence": "api-7f9cはCrashLoopBackOffでRESTARTS=5、worker-2ab1はRunningで0回です。原因や変更者はこの一覧だけでは不明です。",
+          "handoff": "次はapi-7f9cをdescribeし、再起動時刻・image digest・service account・ticketを読みます。",
+          "quiz": {
+            "question": "RESTARTS=5から分かることは？",
+            "choices": [
+              "原因が侵入と確定",
+              "イメージ改ざん確定",
+              "設定変更者が判明",
+              "5回の再起動記録"
+            ],
+            "answer": 3,
+            "explain": "一覧は5回の再起動を示しますが、原因・改ざん・変更者までは示しません。"
+          }
+        },
+        {
+          "id": "ep13-m2",
+          "order": 2,
+          "title": "Pod設定とdigestを読む",
+          "goal": "describe出力から再起動時刻・image digest・service account・ticketを記録する",
+          "context": "api-7f9cの再起動5回を確認しました。次にPodの読み取り専用詳細で設定と変更記録を確認します。",
+          "category": "コンテナ監査",
+          "command": "kubectl describe pod api-7f9c -n lab",
+          "tokens": [
+            {
+              "text": "kubectl",
+              "kind": "command",
+              "meaning": "Kubernetesリソースの詳細を表示します。",
+              "why": "Pod設定とイベント参照を一つの出力で確認できます。",
+              "safety": "describeは読み取り専用で、コンテナ内へ入れません。"
+            },
+            {
+              "text": "describe",
+              "kind": "argument",
+              "meaning": "指定リソースの詳細と状態を表示します。",
+              "why": "image、service account、再起動関連の項目を読めます。",
+              "safety": "設定を変更せず表示だけ行います。"
+            },
+            {
+              "text": "pod",
+              "kind": "argument",
+              "meaning": "対象リソース種別をPodに指定します。",
+              "why": "api-7f9cの詳細へ絞れます。",
+              "safety": "対象を読むだけです。"
+            },
+            {
+              "text": "api-7f9c",
+              "kind": "argument",
+              "meaning": "監査対象の架空Pod名です。",
+              "why": "再起動対象をworkerと混同しません。",
+              "safety": "Northstar Labの模擬Podです。"
+            },
+            {
+              "text": "-n",
+              "kind": "option",
+              "meaning": "namespaceを指定します。",
+              "why": "lab内の同名衝突を避けます。",
+              "safety": "読み取り範囲の指定のみです。"
+            },
+            {
+              "text": "lab",
+              "kind": "argument",
+              "meaning": "Podが属する模擬namespaceです。",
+              "why": "調査対象をNorthstar Labへ限定します。",
+              "safety": "実クラスタを対象にしません。"
+            }
+          ],
+          "output": "$ kubectl describe pod api-7f9c -n lab\nImage: northstar/api@sha256:1111222233334444555566667777888899990000aaaabbbbccccddddeeeeffff\nService Account: api-reader\nLast State: Terminated\nFinished: 2026-08-24T10:11:42Z\nRestart Count: 5\nAnnotation: change-ticket=NS-411",
+          "evidence": "api-7f9cはimage digest sha256:1111…ffff、service account=api-reader、最終終了時刻10:11:42Z、再起動5回、change-ticket=NS-411です。",
+          "handoff": "次はPodログを読み、終了時刻付近のresultとrequest_idが設定変更と結び付くか確認します。",
+          "quiz": {
+            "question": "describeで直接確認できるものは？",
+            "choices": [
+              "コンテナ内での操作",
+              "digestとSAを確認",
+              "設定の書き換え",
+              "Pod削除の結果"
+            ],
+            "answer": 1,
+            "explain": "describe出力にはimage digestとservice accountがあり、読み取りだけで確認できます。"
+          }
+        },
+        {
+          "id": "ep13-m3",
+          "order": 3,
+          "title": "終了直前のログを読む",
+          "goal": "Podログから再起動前の時刻・request_id・結果を記録する",
+          "context": "describeでticket=NS-411と最終終了10:11:42Zを確認しました。次にapi-7f9cの模擬ログを直近2時間だけ読みます。",
+          "category": "コンテナ監査",
+          "command": "kubectl logs api-7f9c -n lab --since=2h",
+          "tokens": [
+            {
+              "text": "kubectl",
+              "kind": "command",
+              "meaning": "Podのログを読み取るCLIです。",
+              "why": "再起動前のアプリ結果とrequest_idを確認できます。",
+              "safety": "logsは読み取り専用で、処理を再実行しません。"
+            },
+            {
+              "text": "logs",
+              "kind": "argument",
+              "meaning": "指定Podの標準ログを表示します。",
+              "why": "終了時刻に近いアプリイベントを確認できます。",
+              "safety": "コンテナへexecせず、ログ表示だけです。"
+            },
+            {
+              "text": "api-7f9c",
+              "kind": "argument",
+              "meaning": "ログを読む架空Pod名です。",
+              "why": "対象の再起動証拠に限定できます。",
+              "safety": "Northstar Labの模擬Podです。"
+            },
+            {
+              "text": "-n",
+              "kind": "option",
+              "meaning": "対象namespaceを指定します。",
+              "why": "lab以外のPodを混ぜません。",
+              "safety": "範囲指定だけで、内容は変更しません。"
+            },
+            {
+              "text": "lab",
+              "kind": "argument",
+              "meaning": "対象Podの模擬namespaceです。",
+              "why": "監査範囲を固定します。",
+              "safety": "実環境へ接続しません。"
+            },
+            {
+              "text": "--since=2h",
+              "kind": "option",
+              "meaning": "直近2時間のログに範囲を限定します。",
+              "why": "10:11:42Z付近の関連イベントを読みやすくします。",
+              "safety": "ログの表示期間だけを制限します。"
+            }
+          ],
+          "output": "$ kubectl logs api-7f9c -n lab --since=2h\n2026-08-24T10:11:39Z request_id=req-1202 action=read resource=bucket-lab result=success\n2026-08-24T10:11:42Z health result=error reason=config-mismatch ticket=NS-411",
+          "evidence": "request_id=req-1202のread successの3秒後、10:11:42Zにconfig-mismatchでerrorとなり、ticket=NS-411が記録されています。read成功が再起動原因とは断定できません。",
+          "handoff": "次はeventsを時刻順に読み、再起動理由とimage変更の記録があるか突き合わせます。",
+          "quiz": {
+            "question": "ログだけで断定できないことは？",
+            "choices": [
+              "request_idの値",
+              "errorの時刻",
+              "read成功が再起動原因",
+              "ticketの記録"
+            ],
+            "answer": 2,
+            "explain": "read successと後続errorは観測できますが、因果関係はイベントや変更履歴を追加確認しないと断定できません。"
+          }
+        },
+        {
+          "id": "ep13-m4",
+          "order": 4,
+          "title": "イベント時系列を照合する",
+          "goal": "namespaceイベントから再起動と設定変更の関連時刻を確認する",
+          "context": "Podログは10:11:42Zのconfig-mismatchを示しました。次にlab namespaceのイベントを時刻順で確認します。",
+          "category": "コンテナ監査",
+          "command": "kubectl get events -n lab --sort-by=.lastTimestamp",
+          "tokens": [
+            {
+              "text": "kubectl",
+              "kind": "command",
+              "meaning": "Kubernetesイベントを表示します。",
+              "why": "再起動や設定反映の時系列を読み取れます。",
+              "safety": "get eventsは読み取り専用で、内容は変更しません。"
+            },
+            {
+              "text": "get",
+              "kind": "argument",
+              "meaning": "指定リソースを一覧表示します。",
+              "why": "イベントの観測記録を取得できます。",
+              "safety": "変更操作は行いません。"
+            },
+            {
+              "text": "events",
+              "kind": "argument",
+              "meaning": "namespace内のイベントを対象にします。",
+              "why": "Pod再起動の前後を広く確認できます。",
+              "safety": "記録表示だけで、イベントは変更しません。"
+            },
+            {
+              "text": "-n",
+              "kind": "option",
+              "meaning": "対象namespaceを指定します。",
+              "why": "labの模擬イベントに限定します。",
+              "safety": "読み取り範囲の指定です。"
+            },
+            {
+              "text": "lab",
+              "kind": "argument",
+              "meaning": "Northstar Labの模擬namespaceです。",
+              "why": "実クラスタのイベントを混ぜません。",
+              "safety": "架空対象だけを参照します。"
+            },
+            {
+              "text": "--sort-by=.lastTimestamp",
+              "kind": "option",
+              "meaning": "最終時刻フィールドで並べ替えます。",
+              "why": "設定反映・終了・再起動の順序を見比べられます。",
+              "safety": "表示順だけを変えます。"
+            }
+          ],
+          "output": "$ kubectl get events -n lab --sort-by=.lastTimestamp\nLAST SEEN   TYPE     REASON             OBJECT       MESSAGE\n10:10:58    Normal   ConfigMapUpdated   pod/api-7f9c  ticket=NS-411 actor=maya\n10:11:42    Warning  BackOff            pod/api-7f9c  restarting container\n10:12:03    Normal   Pulled             pod/api-7f9c  image digest unchanged",
+          "evidence": "10:10:58にticket=NS-411 actor=mayaのConfigMapUpdated、10:11:42にBackOff、10:12:03にdigest unchangedが順にあります。変更者の意図や原因の全容は断定できません。",
+          "handoff": "最後にPodのdigest・service account・ticket・actorを判断材料として整理し、次の署名監査へ渡します。",
+          "quiz": {
+            "question": "eventsの時系列から言えることは？",
+            "choices": [
+              "ConfigMap更新が先",
+              "侵入が確定",
+              "image digestが変更された",
+              "actorの意図が判明"
+            ],
+            "answer": 0,
+            "explain": "10:10:58のConfigMapUpdatedは10:11:42のBackOffより前です。原因や意図は追加証拠が必要です。"
+          }
+        },
+        {
+          "id": "ep13-m5",
+          "order": 5,
+          "title": "再起動の判断を引き継ぐ",
+          "goal": "観測事実と未確定事項を分け、設定変更ticketとdigestを引き継ぐ",
+          "context": "再起動5回、10:10:58ZのConfigMap更新、10:11:42ZのBackOff、digest unchanged、service account=api-readerを確認しました。",
+          "category": "コンテナ監査",
+          "command": "kubectl get pod api-7f9c -n lab -o wide",
+          "tokens": [
+            {
+              "text": "kubectl",
+              "kind": "command",
+              "meaning": "Podの概要を表示します。",
+              "why": "最終状態とノード情報を一貫して記録できます。",
+              "safety": "getは読み取り専用で、内容は変更しません。"
+            },
+            {
+              "text": "get",
+              "kind": "argument",
+              "meaning": "指定Podの現在情報を取得します。",
+              "why": "判断メモの対象Podを再確認できます。",
+              "safety": "作成・削除・execは行いません。"
+            },
+            {
+              "text": "pod",
+              "kind": "argument",
+              "meaning": "対象種別をPodに指定します。",
+              "why": "api-7f9cの状態だけを取得できます。",
+              "safety": "読み取りだけで、対象は変更しません。"
+            },
+            {
+              "text": "api-7f9c",
+              "kind": "argument",
+              "meaning": "監査対象の模擬Pod名です。",
+              "why": "ep13の証拠対象を固定します。",
+              "safety": "Northstar Labの架空Podです。"
+            },
+            {
+              "text": "-n",
+              "kind": "option",
+              "meaning": "namespaceを指定します。",
+              "why": "labの対象を明示できます。",
+              "safety": "範囲指定だけで、内容は変更しません。"
+            },
+            {
+              "text": "lab",
+              "kind": "argument",
+              "meaning": "Podが属する模擬namespaceです。",
+              "why": "実クラスタとの混同を防ぎます。",
+              "safety": "外部通信なしの教材です。"
+            },
+            {
+              "text": "-o",
+              "kind": "option",
+              "meaning": "出力形式を指定します。",
+              "why": "状態を広い列で記録できます。",
+              "safety": "表示形式だけを変えます。"
+            },
+            {
+              "text": "wide",
+              "kind": "argument",
+              "meaning": "追加列を含む一覧形式です。",
+              "why": "ノード等の関連情報を記録できます。",
+              "safety": "読み取り結果の出力だけです。"
+            }
+          ],
+          "output": "$ kubectl get pod api-7f9c -n lab -o wide\nNAME     READY   STATUS             RESTARTS   IP            NODE\napi-7f9c 1/1     CrashLoopBackOff   5          192.0.2.44    lab-node-1",
+          "evidence": "api-7f9cは192.0.2.44上で5回再起動しています。設定変更ticket=NS-411とdigest unchangedは関連材料ですが、侵害や原因の断定には不足します。",
+          "handoff": "EP14では、同じようにactor・ticket・digestを、git履歴とbuild metadataの署名有無へ引き継ぎます。",
+          "quiz": {
+            "question": "安全な最終判断は？",
+            "choices": [
+              "直ちにdeleteする",
+              "再起動とticketを追加確認",
+              "execで原因を探す",
+              "imageを置き換える"
+            ],
+            "answer": 1,
+            "explain": "指定範囲は読み取り監査なので、観測事実を記録し、変更や封じ込めは権限者へ判断依頼します。"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ep14",
+      "number": 14,
+      "title": "署名のないビルド成果物",
+      "subtitle": "commit・artifact・digestを証拠範囲で照合する",
+      "briefing": "Northstar Labの架空リポジトリとbuild metadataを読み、git log/show、sha256sum -c、jqでCI/CDのactor・commit・artifact・digestを照合します。署名がないことから改ざんを断定せず、証拠の範囲を明記します。",
+      "missions": [
+        {
+          "id": "ep14-m1",
+          "order": 1,
+          "title": "リリース履歴を確認する",
+          "goal": "GitのAuthor・AuthorDateとbuild actorの記録範囲を確認する",
+          "context": "EP13のticket=NS-411とimage digest unchangedを引き継ぎました。まず架空リポジトリのリリース履歴を確認します。",
+          "category": "ビルド監査",
+          "command": "git log --format=fuller -3",
+          "tokens": [
+            {
+              "text": "git",
+              "kind": "command",
+              "meaning": "リポジトリ履歴を読み取るバージョン管理CLIです。",
+              "why": "成果物の元commitを追跡できます。",
+              "safety": "logは履歴表示だけで、作業ツリーを変更しません。"
+            },
+            {
+              "text": "log",
+              "kind": "argument",
+              "meaning": "commit履歴を表示します。",
+              "why": "直近の変更順序を把握できます。",
+              "safety": "読み取り専用で、内容は変更しません。"
+            },
+            {
+              "text": "--format=fuller",
+              "kind": "option",
+              "meaning": "commitを短い一行形式で表示します。",
+              "why": "IDと概要を比較しやすくします。",
+              "safety": "表示形式だけで、内容は変更しません。"
+            },
+            {
+              "text": "-3",
+              "kind": "option",
+              "meaning": "直近3件に表示を限定します。",
+              "why": "リリース周辺の履歴に絞れます。",
+              "safety": "履歴を変更しません。"
+            }
+          ],
+          "output": "$ git log --format=fuller -3\ncommit a1b2c3d (HEAD -> release)\nAuthor: ci-builder <ci@northstar.test>\nAuthorDate: 2026-08-24T11:20:00Z\nSubject: build: api 2.4.1\ncommit 9f8e7d6\nAuthor: ci-builder <ci@northstar.test>\nAuthorDate: 2026-08-24T10:58:00Z\nSubject: fix: audit labels",
+          "evidence": "Author=ci-builderとAuthorDate=2026-08-24T11:20:00ZをGit metadataで確認しました。これはcommitのAuthor情報であり、実行actorや成果物digestはこのlogだけでは不明です。",
+          "handoff": "次はa1b2c3dの変更概要をgit showで読み、artifact生成に関係するファイルを絞ります。",
+          "quiz": {
+            "question": "git log --format=fuller -3で分かることは？",
+            "choices": [
+              "直近3件のcommit概要",
+              "artifactの安全性",
+              "署名の秘密鍵",
+              "CIの実行権限"
+            ],
+            "answer": 0,
+            "explain": "fuller形式で直近3件のcommit概要とAuthor・AuthorDateを表示しますが、実行actorや成果物の安全性は示しません。"
+          }
+        },
+        {
+          "id": "ep14-m2",
+          "order": 2,
+          "title": "変更対象を読む",
+          "goal": "対象commitのauthor・時刻・変更ファイルを確認する",
+          "context": "HEAD=a1b2c3dを確認しました。次にそのcommitを表示し、build metadataとの照合範囲を確定します。",
+          "category": "ビルド監査",
+          "command": "git show --stat --format=fuller a1b2c3d",
+          "tokens": [
+            {
+              "text": "git",
+              "kind": "command",
+              "meaning": "リポジトリのcommit情報を表示します。",
+              "why": "成果物の出所候補を確認できます。",
+              "safety": "showは読み取り専用で、内容は変更しません。"
+            },
+            {
+              "text": "show",
+              "kind": "argument",
+              "meaning": "指定commitの情報を表示します。",
+              "why": "release commitの差分範囲を確認できます。",
+              "safety": "変更を適用しません。"
+            },
+            {
+              "text": "--stat",
+              "kind": "option",
+              "meaning": "変更ファイルと行数の概要を表示します。",
+              "why": "詳細コードを広げず対象を絞れます。",
+              "safety": "表示範囲だけを制御します。"
+            },
+            {
+              "text": "--format=fuller",
+              "kind": "option",
+              "meaning": "commit識別子と概要を一行表示します。",
+              "why": "履歴の識別子を揃えられます。",
+              "safety": "読み取り専用で、内容は変更しません。"
+            },
+            {
+              "text": "a1b2c3d",
+              "kind": "argument",
+              "meaning": "照合対象の架空commit IDです。",
+              "why": "build metadataのcommit欄と比較できます。",
+              "safety": "Northstar Labの模擬履歴だけを参照します。"
+            }
+          ],
+          "output": "$ git show --stat --format=fuller a1b2c3d\ncommit a1b2c3d\nAuthor: ci-builder <ci@northstar.test>\nAuthorDate: 2026-08-24T11:20:00Z\nCommitDate: 2026-08-24T11:20:03Z\nSubject: build: api 2.4.1\n api/Dockerfile | 2 +\n build-meta.json | 8 +\n 2 files changed, 10 insertions(+)",
+          "evidence": "commit=a1b2c3dはactor相当のci-builder、時刻11:20:00Z、api/Dockerfileとbuild-meta.jsonを変更しました。承認や署名の有無は別証拠です。",
+          "handoff": "次はrelease.sha256を照合し、artifact digestとファイルハッシュの一致・不一致を確認します。",
+          "quiz": {
+            "question": "git show --statの役割は？",
+            "choices": [
+              "commitを削除",
+              "変更対象の概要を読む",
+              "成果物を署名",
+              "CIを再実行"
+            ],
+            "answer": 1,
+            "explain": "--statは指定commitの変更ファイルと行数を表示するだけで、署名や再実行はしません。"
+          }
+        },
+        {
+          "id": "ep14-m3",
+          "order": 3,
+          "title": "成果物ハッシュを照合する",
+          "goal": "既知リストのartifactハッシュ照合結果を記録する",
+          "context": "a1b2c3dがbuild-meta.jsonを変更したと確認しました。次に添付や成果物を実行せず、release.sha256との一致を検証します。",
+          "category": "ビルド監査",
+          "command": "sha256sum -c release.sha256",
+          "tokens": [
+            {
+              "text": "sha256sum",
+              "kind": "command",
+              "meaning": "SHA-256ハッシュを計算・検証します。",
+              "why": "artifactの内容が既知値と一致するか確認できます。",
+              "safety": "成果物を実行せず、読み取りと計算だけをします。"
+            },
+            {
+              "text": "-c",
+              "kind": "option",
+              "meaning": "チェックリストの期待値と照合します。",
+              "why": "release artifactの一致結果を明確にできます。",
+              "safety": "照合のみで、artifactを書き換えません。"
+            },
+            {
+              "text": "release.sha256",
+              "kind": "argument",
+              "meaning": "release artifactの既知ハッシュリストです。",
+              "why": "照合基準と対象ファイルを固定できます。",
+              "safety": "Northstar Labの架空リストを使います。"
+            }
+          ],
+          "output": "$ sha256sum -c release.sha256\napi-2.4.1.tar: OK\napi-2.4.1.att: FAILED\nsha256sum: WARNING: 1 computed checksum did NOT match",
+          "evidence": "api-2.4.1.tarはOK、api-2.4.1.attはFAILEDです。ハッシュ不一致は観測できますが、直ちに改ざん原因や攻撃者を断定できません。",
+          "handoff": "次はbuild-meta.jsonからCI actor・commit・artifact・digestを抽出し、ハッシュ結果と照合します。",
+          "quiz": {
+            "question": "sha256sumの結果として正しい読み方は？",
+            "choices": [
+              "tarは一致、attは不一致",
+              "両方とも署名済み",
+              "CI侵害が確定",
+              "全artifactを削除"
+            ],
+            "answer": 0,
+            "explain": "出力はtar=OK、att=FAILEDを示します。署名・原因・侵害までは別の証拠が必要です。"
+          }
+        },
+        {
+          "id": "ep14-m4",
+          "order": 4,
+          "title": "build metadataを揃える",
+          "goal": "actor・commit・artifact・digestを一つの行で確認する",
+          "context": "attestation相当のapi-2.4.1.attが不一致でした。次にbuild metadataの識別子を抽出してcommitとartifactを対応付けます。",
+          "category": "ビルド監査",
+          "command": "jq -r '[.actor,.commit,.artifact,.digest] | @tsv' build-meta.json",
+          "tokens": [
+            {
+              "text": "jq",
+              "kind": "command",
+              "meaning": "JSON metadataから指定フィールドを読むツールです。",
+              "why": "CI/CDの主要な相関キーを揃えられます。",
+              "safety": "架空metadataの読み取り専用で、内容は変更しません。"
+            },
+            {
+              "text": "-r",
+              "kind": "option",
+              "meaning": "文字列を引用符なしで出力します。",
+              "why": "TSVとしてcommitやdigestを比較できます。",
+              "safety": "出力形式だけを変えます。"
+            },
+            {
+              "text": "'[.actor,.commit,.artifact,.digest]",
+              "kind": "argument",
+              "meaning": "4つのmetadataフィールドを配列化します。",
+              "why": "actorからdigestまでの対応を一行で記録できます。",
+              "safety": "値の表示のみで、buildを開始しません。"
+            },
+            {
+              "text": "|",
+              "kind": "operator",
+              "meaning": "配列を後段のTSV変換へ渡します。",
+              "why": "比較しやすい一行形式にできます。",
+              "safety": "JSON内処理の受け渡しだけです。"
+            },
+            {
+              "text": "@tsv",
+              "kind": "argument",
+              "meaning": "配列をタブ区切りへ変換します。",
+              "why": "commitとartifact digestの関係を目視できます。",
+              "safety": "整形専用で、内容は変更しません。"
+            },
+            {
+              "text": "build-meta.json",
+              "kind": "argument",
+              "meaning": "架空CI/CDビルドのmetadataファイルです。",
+              "why": "ハッシュ照合の対象と出所を結びます。",
+              "safety": "外部CIへ接続しません。"
+            }
+          ],
+          "output": "$ jq -r '[.actor,.commit,.artifact,.digest] | @tsv' build-meta.json\nci-builder\ta1b2c3d\tapi-2.4.1.att\tsha256:aaaa1111bbbb2222cccc3333dddd4444eeee5555ffff6666aaaa7777bbbb8888",
+          "evidence": "ci-builderがcommit=a1b2c3dからapi-2.4.1.attを生成し、digest=sha256:aaaa…8888として記録されています。attのファイルハッシュFAILEDとの対応は確認できます。",
+          "handoff": "最後にcommitの完全メタデータを表示し、署名欄がないことと証拠範囲を判断します。",
+          "quiz": {
+            "question": "metadataの4列が結ぶものは？",
+            "choices": [
+              "4列を対応付け",
+              "ユーザー・パスワード・鍵・IP",
+              "Pod等の別情報",
+              "メール・添付・本文・URL"
+            ],
+            "answer": 0,
+            "explain": "指定した4列はCI actor、元commit、artifact名、digestを対応付けます。"
+          }
+        },
+        {
+          "id": "ep14-m5",
+          "order": 5,
+          "title": "署名欠落の判断を引き継ぐ",
+          "goal": "署名を確認できないこととハッシュ不一致を分け、改ざんを断定せず報告する",
+          "context": "commit=a1b2c3d、actor=ci-builder、artifact=api-2.4.1.att、digest=sha256:aaaa…8888、sha256sum=FAILEDを確認しました。",
+          "category": "ビルド監査",
+          "command": "git show --show-signature --format=fuller --no-patch a1b2c3d",
+          "tokens": [
+            {
+              "text": "git",
+              "kind": "command",
+              "meaning": "commitのメタデータを読み取ります。",
+              "why": "actor・時刻・親commitを最終照合できます。",
+              "safety": "表示だけで履歴を変更しません。"
+            },
+            {
+              "text": "show",
+              "kind": "argument",
+              "meaning": "指定commitの情報を表示します。",
+              "why": "build metadataのcommit出所を確認できます。",
+              "safety": "読み取り専用で、内容は変更しません。"
+            },
+            {
+              "text": "--show-signature",
+              "kind": "option",
+              "meaning": "コミット署名の有無も表示します。",
+              "why": "署名検証の結果を履歴メタデータと分けて確認できます。",
+              "safety": "履歴を表示するだけで署名やコミットは変更しません。"
+            },
+            {
+              "text": "--format=fuller",
+              "kind": "option",
+              "meaning": "author・committer・時刻を詳しく表示します。",
+              "why": "actorと時刻の照合範囲を広げられます。",
+              "safety": "表示形式の指定だけです。"
+            },
+            {
+              "text": "--no-patch",
+              "kind": "option",
+              "meaning": "コード差分を表示せずメタデータだけにします。",
+              "why": "署名・出所の確認に集中できます。",
+              "safety": "差分を適用せず、読み取りだけで、対象は変更しません。"
+            },
+            {
+              "text": "a1b2c3d",
+              "kind": "argument",
+              "meaning": "確認対象の架空commitです。",
+              "why": "metadataのcommitと同じ対象に固定できます。",
+              "safety": "Northstar Labの模擬履歴です。"
+            }
+          ],
+          "output": "$ git show --show-signature --format=fuller --no-patch a1b2c3d\ngpg: no signature found\ncommit a1b2c3d\nAuthor: ci-builder <ci@northstar.test>\nCommit: ci-builder <ci@northstar.test>\nAuthorDate: 2026-08-24T11:20:00Z\nCommitDate: 2026-08-24T11:20:03Z\nSubject: build: api 2.4.1",
+          "evidence": "show-signatureの結果はno signature foundで、commitとactor・時刻はmetadataと整合します。attのハッシュ不一致と合わせても、改ざん者や原因は証拠範囲外です。",
+          "handoff": "EP15では、署名欠落を手掛かりに自動起動設定の痕跡を読み取り、作成・有効化・隠蔽はせず判断だけを引き継ぎます。",
+          "quiz": {
+            "question": "署名を確認できない場合の適切な結論は？",
+            "choices": [
+              "改ざんを断定",
+              "証拠不足として署名検証を追加依頼",
+              "成果物を実行",
+              "履歴を削除"
+            ],
+            "answer": 1,
+            "explain": "no signature foundとハッシュ不一致は報告材料ですが、改ざんの原因や実行結果は追加証拠が必要です。"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ep15",
+      "number": 15,
+      "title": "見慣れない自動起動設定",
+      "subtitle": "systemdの新規ファイルと監査記録を読む",
+      "briefing": "Northstar Labの防御監査として、systemctl list-unit-files、/etc/systemd/systemの新規ファイル、stat、audit.logを読みます。自動起動の作成・有効化・隠蔽や封じ込めコマンドは実行せず、観測事実と判断を記録します。",
+      "missions": [
+        {
+          "id": "ep15-m1",
+          "order": 1,
+          "title": "自動起動ユニットを一覧化する",
+          "goal": "systemdユニットの有効状態から監査対象を見つける",
+          "context": "EP14の署名欠落とticket=NS-411を引き継ぎました。まずNorthstar Labの模擬systemdユニットを読み取り、見慣れない候補を特定します。",
+          "category": "自動起動監査",
+          "command": "systemctl list-unit-files --type=service",
+          "tokens": [
+            {
+              "text": "systemctl",
+              "kind": "command",
+              "meaning": "systemdユニットの状態を表示するCLIです。",
+              "why": "自動起動サービスの一覧を確認できます。",
+              "safety": "list-unit-filesは読み取り専用で、enableやstartを行いません。"
+            },
+            {
+              "text": "list-unit-files",
+              "kind": "argument",
+              "meaning": "インストール済みユニットファイルと状態を一覧表示します。",
+              "why": "見慣れないサービス名と有効状態を発見できます。",
+              "safety": "ユニットの作成・有効化はしません。"
+            },
+            {
+              "text": "--type=service",
+              "kind": "option",
+              "meaning": "サービス型ユニットに対象を限定します。",
+              "why": "自動起動に関係するサービスだけを見やすくします。",
+              "safety": "表示範囲の指定だけです。"
+            }
+          ],
+          "output": "$ systemctl list-unit-files --type=service\nUNIT FILE                 STATE\nsshd.service              enabled\nnorthstar-agent.service   enabled\ncache-refresh.service     static\ntelemetry-sync.service    enabled",
+          "evidence": "telemetry-sync.serviceがenabledとして一覧にあります。名称だけでは正当性や作成者は断定できません。",
+          "handoff": "次は/etc/systemd/system内で監査期間に新規作成されたサービスファイルを読み取り候補を絞ります。",
+          "quiz": {
+            "question": "list-unit-filesで分かることは？",
+            "choices": [
+              "サービスの有効状態",
+              "作成者の意図",
+              "実行内容の安全性",
+              "封じ込め完了"
+            ],
+            "answer": 0,
+            "explain": "一覧はユニット名とSTATEを示しますが、正当性や意図、封じ込めまでは示しません。"
+          }
+        },
+        {
+          "id": "ep15-m2",
+          "order": 2,
+          "title": "新規ユニットファイルを探す",
+          "goal": "監査期間に新しく見つかったsystemdファイルのパスを記録する",
+          "context": "telemetry-sync.serviceがenabledでした。次に作成時刻を基準に、模擬/etc/systemd/systemの新規ファイルを検索します。",
+          "category": "自動起動監査",
+          "command": "find /etc/systemd/system -type f -newermt '2026-08-24 09:00'",
+          "tokens": [
+            {
+              "text": "find",
+              "kind": "command",
+              "meaning": "指定範囲から条件に合うファイルを検索します。",
+              "why": "監査期間内に現れたユニットファイルを特定できます。",
+              "safety": "検索だけで、ファイルを作成・削除しません。"
+            },
+            {
+              "text": "/etc/systemd/system",
+              "kind": "argument",
+              "meaning": "systemdのローカルユニット配置先です。",
+              "why": "自動起動設定の監査対象を明示できます。",
+              "safety": "Northstar Labの架空パスを読むだけです。"
+            },
+            {
+              "text": "-type",
+              "kind": "option",
+              "meaning": "検索対象の種類を指定します。",
+              "why": "通常ファイルだけを対象にできます。",
+              "safety": "検索条件であり、状態を変更しません。"
+            },
+            {
+              "text": "f",
+              "kind": "argument",
+              "meaning": "通常ファイルを意味するfindの条件値です。",
+              "why": "ディレクトリを除いてユニットファイルを拾えます。",
+              "safety": "読み取り検索だけです。"
+            },
+            {
+              "text": "-newermt",
+              "kind": "option",
+              "meaning": "指定日時より新しい更新時刻を条件にします。",
+              "why": "監査開始後に現れたファイルを絞れます。",
+              "safety": "時刻比較だけで、ファイルを変更しません。"
+            },
+            {
+              "text": "'2026-08-24 09:00'",
+              "kind": "argument",
+              "meaning": "新規性判定の基準日時です。",
+              "why": "監査期間を再現可能にします。",
+              "safety": "架空データの検索基準です。"
+            }
+          ],
+          "output": "$ find /etc/systemd/system -type f -newermt '2026-08-24 09:00'\n/etc/systemd/system/telemetry-sync.service\n/etc/systemd/system/telemetry-sync.timer",
+          "evidence": "09:00以降にtelemetry-sync.serviceと.timerが見つかりました。新規作成か更新かはfindの結果だけでは区別できません。",
+          "handoff": "次はstatで両ファイルのmtime・所有者・権限を読み、audit.logのactorと比較します。",
+          "quiz": {
+            "question": "findの結果から断定できないことは？",
+            "choices": [
+              "対象パス",
+              "基準日時より新しいこと",
+              "新規作成か更新か",
+              "通常ファイルであること"
+            ],
+            "answer": 2,
+            "explain": "-newermtは基準日時より新しい更新を示すだけで、新規作成と既存更新を区別しません。"
+          }
+        },
+        {
+          "id": "ep15-m3",
+          "order": 3,
+          "title": "ファイル属性を記録する",
+          "goal": "serviceとtimerのSHA-256を記録して比較材料にする",
+          "context": "m2でserviceとtimerのパス・mtimeを確認しました。設定内容を実行せず、両ファイルのSHA-256だけを読みます。",
+          "category": "自動起動監査",
+          "command": "sha256sum /etc/systemd/system/telemetry-sync.{service,timer}",
+          "tokens": [
+            {
+              "text": "sha256sum",
+              "kind": "command",
+              "meaning": "ファイルのSHA-256値を計算します。",
+              "why": "serviceとtimerを内容識別子で比較できます。",
+              "safety": "設定を実行せずハッシュだけを読み取ります。"
+            },
+            {
+              "text": "/etc/systemd/system/telemetry-sync.{service,timer}",
+              "kind": "argument",
+              "meaning": "serviceとtimerを指定する絶対パスです。",
+              "why": "m2で見つけた両候補を同じ条件で確認できます。",
+              "safety": "模擬データを読み取るだけです。"
+            }
+          ],
+          "output": "$ sha256sum /etc/systemd/system/telemetry-sync.{service,timer}\n7f7e1111222233334444555566667777888899990000aaaabbbbccccddddeeee  /etc/systemd/system/telemetry-sync.service\n2a2b3333444455556666777788889999aaaabbbbccccddddeeeeffff00001111  /etc/systemd/system/telemetry-sync.timer",
+          "evidence": "serviceとtimerのSHA-256をそれぞれ記録しました。ハッシュは内容比較の材料ですが、悪性や作成者の意図は断定できません。",
+          "handoff": "次はaudit.logからactor・ticket・unit・resultを抽出し、mtimeとの時刻差を照合します。",
+          "quiz": {
+            "question": "sha256sumの目的は？",
+            "choices": [
+              "サービスを起動",
+              "2つのハッシュを記録",
+              "権限を付与",
+              "設定を隠す"
+            ],
+            "answer": 1,
+            "explain": "sha256sumはserviceとtimerの内容識別子を表示し、設定を実行せず比較材料を作ります。"
+          }
+        },
+        {
+          "id": "ep15-m4",
+          "order": 4,
+          "title": "監査ログと結び付ける",
+          "goal": "unit作成・有効化に関するactor・ticket・resultを時刻とともに確認する",
+          "context": "telemetry-sync.serviceのmtime=09:07:12Zとhashを記録しました。次にaudit.logで設定変更のactorと承認ticketを読みます。",
+          "category": "自動起動監査",
+          "command": "grep -E 'unit=telemetry-sync|ticket=|actor=' audit.log",
+          "tokens": [
+            {
+              "text": "grep",
+              "kind": "command",
+              "meaning": "監査ログから一致する行を抽出します。",
+              "why": "対象unitとactor・ticket・resultを同時に比較できます。",
+              "safety": "ログを読むだけで、systemd操作は行いません。"
+            },
+            {
+              "text": "-E",
+              "kind": "option",
+              "meaning": "複数条件の拡張正規表現を使います。",
+              "why": "unit・ticket・actorを一度に抽出できます。",
+              "safety": "検索条件だけを指定します。"
+            },
+            {
+              "text": "'unit=telemetry-sync|ticket=|actor='",
+              "kind": "argument",
+              "meaning": "対象unit、ticket、actorを含む行の検索式です。",
+              "why": "設定変更の関連記録を漏れなく拾えます。",
+              "safety": "文字列検索であり、有効化や停止はしません。"
+            },
+            {
+              "text": "audit.log",
+              "kind": "argument",
+              "meaning": "systemd設定変更の架空監査ログです。",
+              "why": "mtimeとactor・ticketの出所を結びます。",
+              "safety": "Northstar Labの模擬ログのみを読みます。"
+            }
+          ],
+          "output": "$ grep -E 'unit=telemetry-sync|ticket=|actor=' audit.log\n2026-08-24T09:06:58Z actor=maya action=write unit=telemetry-sync.service result=success ticket=NS-411\n2026-08-24T09:07:20Z actor=maya action=enable unit=telemetry-sync.service result=success ticket=NS-411\n2026-08-24T09:07:21Z actor=maya action=enable unit=telemetry-sync.timer result=success ticket=NS-411",
+          "evidence": "09:06:58Zのwrite成功、09:07:20Z/21Zのenable成功がactor=maya、ticket=NS-411に結び付きます。mtime=09:07:12Zとの前後関係はありますが、変更の正当性は承認記録の追加確認が必要です。",
+          "handoff": "最後に読み取りコマンドで候補を再確認し、観測・未確定・推奨確認を分けて封じ込め判断へ引き継ぎます。",
+          "quiz": {
+            "question": "audit.logから確認できる事実は？",
+            "choices": [
+              "mayaの変更成功記録",
+              "変更が必ず悪性",
+              "承認者の意図",
+              "侵害が完了"
+            ],
+            "answer": 0,
+            "explain": "ログにはactor=mayaのwrite/enable成功、時刻、ticket=NS-411がありますが、悪性や意図は断定できません。"
+          }
+        },
+        {
+          "id": "ep15-m5",
+          "order": 5,
+          "title": "自動起動痕跡を判断する",
+          "goal": "観測事実と未確定事項を分け、封じ込めを実行せず判断を引き継ぐ",
+          "context": "telemetry-syncの新しいmtime・hash、actor=maya、write/enable成功、ticket=NS-411を確認しました。最後に一覧を再読し、判断材料をまとめます。",
+          "category": "自動起動監査",
+          "command": "systemctl list-unit-files telemetry-sync.service telemetry-sync.timer",
+          "tokens": [
+            {
+              "text": "systemctl",
+              "kind": "command",
+              "meaning": "systemdユニット情報を表示します。",
+              "why": "候補サービスとtimerの現在状態を再確認できます。",
+              "safety": "一覧表示だけで、disable・stop・maskは行いません。"
+            },
+            {
+              "text": "list-unit-files",
+              "kind": "argument",
+              "meaning": "指定ユニットファイルの状態を表示します。",
+              "why": "serviceとtimerの自動起動状態を最終記録できます。",
+              "safety": "読み取り専用で、内容は変更しません。"
+            },
+            {
+              "text": "telemetry-sync.service",
+              "kind": "argument",
+              "meaning": "監査対象サービスユニットです。",
+              "why": "audit.logのunitと一致させられます。",
+              "safety": "架空ユニットの表示だけです。"
+            },
+            {
+              "text": "telemetry-sync.timer",
+              "kind": "argument",
+              "meaning": "監査対象timerユニットです。",
+              "why": "サービスと関連する自動起動設定を一緒に確認できます。",
+              "safety": "timerを起動せず状態だけ読みます。"
+            }
+          ],
+          "output": "$ systemctl list-unit-files telemetry-sync.service telemetry-sync.timer\nUNIT FILE               STATE\ntelemetry-sync.service   enabled\ntelemetry-sync.timer     enabled",
+          "evidence": "serviceとtimerはいずれもenabledです。新規ファイル、hash、actor、ticket、enable結果は観測済みですが、悪性・承認逸脱・実害は断定不能です。",
+          "handoff": "EP16では、ticket=NS-411とactor=mayaの監査記録をWindows Securityイベントの主体・時刻と照合します。封じ込めは承認後に判断します。",
+          "quiz": {
+            "question": "この段階の安全な対応は？",
+            "choices": [
+              "disableを実行",
+              "serviceを削除",
+              "証拠を保全し権限者へ判断依頼",
+              "ログを隠す"
+            ],
+            "answer": 2,
+            "explain": "本教材は防御監査なので、設定を変えず証拠を保全し、承認確認と封じ込め可否を権限者へ引き継ぎます。"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ep16",
+      "number": 16,
+      "title": "Windows端末の認証連鎖",
+      "subtitle": "Securityログのイベントを相関する",
+      "briefing": "Northstar Labの許可済みWindows端末で、保存済みのSecurityイベントを読み取ります。4625（失敗）、4624（成功）、4672（特別な権限）の関係を調べますが、単一イベントだけで侵害を断定しません。実端末操作や資格情報は扱いません。",
+      "missions": [
+        {
+          "id": "ep16-m1",
+          "order": 1,
+          "title": "Securityログの範囲を読む",
+          "goal": "保存済みSecurityログから監査対象のイベントと時刻範囲を確認する",
+          "context": "EP15からticket=NS-411、actor=maya、変更時刻の監査記録を引き継ぎました。WIN-TRAIN-04のSecurityログを読み、認証連鎖の範囲を記録します。",
+          "category": "Windows認証監査",
+          "command": "Get-WinEvent -LogName Security -MaxEvents 20",
+          "tokens": [
+            {
+              "text": "Get-WinEvent",
+              "kind": "command",
+              "meaning": "Windowsイベントログからイベントを読み取ります。",
+              "why": "Securityログの観測事実を取得する起点になります。",
+              "safety": "保存済みのNorthstar Labログを読むだけで、イベントや端末を変更しません。"
+            },
+            {
+              "text": "-LogName",
+              "kind": "option",
+              "meaning": "読み取るイベントログ名を指定します。",
+              "why": "認証監査を含むSecurityログに対象を限定できます。",
+              "safety": "ログ名の指定だけで、イベントの削除や書き込みは行いません。"
+            },
+            {
+              "text": "Security",
+              "kind": "argument",
+              "meaning": "WindowsのSecurityイベントログを表す名前です。",
+              "why": "4625、4624、4672を同じ監査源から確認できます。",
+              "safety": "Northstar Labの模擬ログ名で、実端末には接続しません。"
+            },
+            {
+              "text": "-MaxEvents",
+              "kind": "option",
+              "meaning": "取得する直近イベント数の上限を指定します。",
+              "why": "調査対象を20件に固定し、証拠の範囲を再現できます。",
+              "safety": "表示件数を制限するだけで、ログは変更しません。"
+            },
+            {
+              "text": "20",
+              "kind": "argument",
+              "meaning": "取得するイベント数の上限値です。",
+              "why": "直近20件を同じ条件で再確認できます。",
+              "safety": "読み取り量の指定であり、端末への操作ではありません。"
+            }
+          ],
+          "output": "PS> Get-WinEvent -LogName Security -MaxEvents 20\nTimeCreated           Id Message\n2026-08-24 00:14:02Z 4625 Logon failure\n2026-08-24 00:14:19Z 4624 Successful logon\n2026-08-24 00:14:21Z 4672 Special privileges assigned",
+          "evidence": "直近20件の範囲に、00:14:02Zの4625、00:14:19Zの4624、00:14:21Zの4672が含まれます。これは観測範囲であり、成功した不正利用の証明ではありません。",
+          "handoff": "次は4625だけをWhere-Objectで抽出し、失敗したアカウントと送信元を記録します。",
+          "quiz": {
+            "question": "MaxEvents 20の意味は？",
+            "choices": [
+              "20件を削除する",
+              "直近20件だけ読む",
+              "20分間監視する",
+              "20ユーザーを作る"
+            ],
+            "answer": 1,
+            "explain": "-MaxEvents 20は取得件数の上限です。ログの削除や監視の開始は行いません。"
+          }
+        },
+        {
+          "id": "ep16-m2",
+          "order": 2,
+          "title": "失敗認証を抽出する",
+          "goal": "4625イベントを絞り込み、失敗時刻・アカウント・送信元を確認する",
+          "context": "m1で00:14台に複数の認証イベントを確認しました。まず失敗（4625）を抽出し、後続の成功イベントと比較できる形にします。",
+          "category": "Windows認証監査",
+          "command": "Get-WinEvent -LogName Security | Where-Object Id -eq 4625",
+          "tokens": [
+            {
+              "text": "Get-WinEvent",
+              "kind": "command",
+              "meaning": "イベントログのイベントを読み取ります。",
+              "why": "失敗認証を保存済みログから調べます。",
+              "safety": "読み取り専用の模擬ログ確認です。"
+            },
+            {
+              "text": "-LogName",
+              "kind": "option",
+              "meaning": "入力ログを名前で指定します。",
+              "why": "Securityログ以外を混ぜずに監査できます。",
+              "safety": "対象を指定するだけで設定変更はありません。"
+            },
+            {
+              "text": "Security",
+              "kind": "argument",
+              "meaning": "認証監査イベントを含むログ名です。",
+              "why": "4625の出所を明確にできます。",
+              "safety": "架空のNorthstar Labデータだけを参照します。"
+            },
+            {
+              "text": "|",
+              "kind": "operator",
+              "meaning": "左のイベント列を右の条件へ渡します。",
+              "why": "取得結果をその場で失敗イベントに絞れます。",
+              "safety": "メモリ上の表示データを渡すだけです。"
+            },
+            {
+              "text": "Where-Object",
+              "kind": "command",
+              "meaning": "条件に一致するPowerShellオブジェクトだけを選びます。",
+              "why": "イベントIDを4625に限定できます。",
+              "safety": "ログ行を変更せず、条件付きで表示します。"
+            },
+            {
+              "text": "Id",
+              "kind": "argument",
+              "meaning": "WindowsイベントのIDプロパティです。",
+              "why": "認証失敗イベントを識別するキーになります。",
+              "safety": "プロパティを読むだけです。"
+            },
+            {
+              "text": "-eq",
+              "kind": "operator",
+              "meaning": "左右の値が等しいか比較します。",
+              "why": "Idが4625のイベントだけを残せます。",
+              "safety": "比較処理で、認証操作は発生しません。"
+            },
+            {
+              "text": "4625",
+              "kind": "argument",
+              "meaning": "Windowsの失敗ログオンイベントIDです。",
+              "why": "失敗時刻とアカウントを後続イベントと結びます。",
+              "safety": "数値条件として扱い、ログオンを試行しません。"
+            }
+          ],
+          "output": "PS> Get-WinEvent -LogName Security | Where-Object Id -eq 4625\nTimeCreated           Id TargetUserName SourceNetworkAddress\n2026-08-24 00:14:02Z 4625 svc-report 203.0.113.44\n2026-08-24 00:14:07Z 4625 svc-report 203.0.113.44",
+          "evidence": "svc-reportへの4625が00:14:02Zと00:14:07Zにあり、送信元は文書用IP 203.0.113.44です。失敗イベントである点を記録します。",
+          "handoff": "次は同じSecurityログから4624を抽出し、失敗の直後に成功があったかを時刻とアカウントで照合します。",
+          "quiz": {
+            "question": "4625の抽出結果から確実に言えることは？",
+            "choices": [
+              "ログオンが成功した",
+              "svc-reportの失敗が2件",
+              "資格情報が判明した",
+              "端末隔離が完了した"
+            ],
+            "answer": 1,
+            "explain": "4625は失敗ログオンなので、svc-reportに2件の失敗記録があるとだけ言えます。成功や資格情報は示しません。"
+          }
+        },
+        {
+          "id": "ep16-m3",
+          "order": 3,
+          "title": "成功イベントの主体を読む",
+          "goal": "4624イベントからアカウント・ログオン種別・時刻を選択して比較材料を作る",
+          "context": "m2では同一送信元からsvc-reportへの失敗が続きました。次に4624を必要なプロパティだけに整形し、失敗との時間差を測れるようにします。",
+          "category": "Windows認証監査",
+          "tokens": [
+            {
+              "text": "Get-WinEvent",
+              "kind": "command",
+              "meaning": "イベントログのオブジェクトを読み取ります。",
+              "why": "成功ログオンの記録源を統一します。",
+              "safety": "保存済みログの読み取り専用処理です。"
+            },
+            {
+              "text": "-LogName",
+              "kind": "option",
+              "meaning": "読み取るログ名を指定します。",
+              "why": "Securityイベントだけを対象にします。",
+              "safety": "対象指定のみで変更はありません。"
+            },
+            {
+              "text": "Security",
+              "kind": "argument",
+              "meaning": "Windows Securityイベントログの名前です。",
+              "why": "4624の監査証跡を検索できます。",
+              "safety": "架空ラボのログを参照します。"
+            },
+            {
+              "text": "|",
+              "kind": "operator",
+              "meaning": "イベントを次の条件へ渡すパイプです。",
+              "why": "取得・抽出・整形を一続きにできます。",
+              "safety": "データの流れを変えるだけです。"
+            },
+            {
+              "text": "Where-Object",
+              "kind": "command",
+              "meaning": "条件に合うイベントを選択します。",
+              "why": "4624の成功ログオンに絞ります。",
+              "safety": "イベントは変更しません。"
+            },
+            {
+              "text": "Id",
+              "kind": "argument",
+              "meaning": "イベントIDプロパティです。",
+              "why": "成功ログオンの識別に使います。",
+              "safety": "読み取りだけで、対象は変更しません。"
+            },
+            {
+              "text": "-eq",
+              "kind": "operator",
+              "meaning": "値の一致を比較する演算子です。",
+              "why": "4624だけを残します。",
+              "safety": "条件比較であり外部操作はありません。"
+            },
+            {
+              "text": "4624",
+              "kind": "argument",
+              "meaning": "Windowsの成功ログオンイベントIDです。",
+              "why": "失敗後の成功有無を確認します。",
+              "safety": "数値を検索するだけです。"
+            },
+            {
+              "text": "|",
+              "kind": "operator",
+              "meaning": "抽出結果をSelect-Objectへ渡します。",
+              "why": "比較に必要な列だけを並べられます。",
+              "safety": "表示用の受け渡しのみです。"
+            },
+            {
+              "text": "Select-Object",
+              "kind": "command",
+              "meaning": "指定プロパティだけを選択して表示します。",
+              "why": "時刻・ID・メッセージを比較可能にします。",
+              "safety": "表示項目を絞るだけで記録を変更しません。"
+            },
+            {
+              "text": "TimeCreated,Id,Message",
+              "kind": "argument",
+              "meaning": "表示するイベント時刻・ID・メッセージの列です。",
+              "why": "失敗から成功までの時刻と内容を比較できます。",
+              "safety": "既存プロパティの読み取り指定です。"
+            }
+          ],
+          "command": "Get-WinEvent -LogName Security|Where-Object Id -eq 4624|Select-Object TimeCreated,Id,Message",
+          "output": "PS> Get-WinEvent -LogName Security|Where-Object Id -eq 4624|Select-Object TimeCreated,Id,Message\nTimeCreated           Id Message\n2026-08-24 00:14:19Z 4624 Account=svc-report LogonType=3 Source=203.0.113.44",
+          "evidence": "4625の最終記録から12秒後、同じアカウント・送信元の4624（LogonType=3）が確認できます。相関の手掛かりですが、成功理由や操作内容までは分かりません。",
+          "handoff": "次は00:14台の4672をGroup-Objectで主体別に数え、特別な権限イベントが同じ連鎖にあるか確認します。",
+          "quiz": {
+            "question": "Select-Objectの役割は？",
+            "choices": [
+              "イベントを削除する",
+              "選んだ列だけ表示する",
+              "権限を付与する",
+              "時刻を改ざんする"
+            ],
+            "answer": 1,
+            "explain": "Select-ObjectはTimeCreatedなど指定したプロパティだけを表示し、証拠を比較しやすくします。"
+          }
+        },
+        {
+          "id": "ep16-m4",
+          "order": 4,
+          "title": "特別権限の偏りを数える",
+          "goal": "CSVの4672イベントをAccount別に集計し単発か反復か確認する",
+          "context": "m3で成功ログオンを確認しました。保存済みCSVのEventId=4672をAccount列で集計し、主体別の偏りを読み取ります。",
+          "category": "Windows認証監査",
+          "command": "Import-Csv security-events.csv | Where-Object EventId -eq 4672 | Group-Object Account",
+          "tokens": [
+            {
+              "text": "Import-Csv",
+              "kind": "command",
+              "meaning": "CSVを行オブジェクトとして読み込みます。",
+              "why": "保存済みイベント表を再現可能な形で扱えます。",
+              "safety": "模擬データの読み取りだけで、対象は変更しません。"
+            },
+            {
+              "text": "security-events.csv",
+              "kind": "argument",
+              "meaning": "Windowsイベントを収めた教材CSVです。",
+              "why": "4672の監査対象を固定できます。",
+              "safety": "模擬データの読み取りだけで、対象は変更しません。"
+            },
+            {
+              "text": "|",
+              "kind": "operator",
+              "meaning": "CSV行を次の条件へ渡すパイプです。",
+              "why": "読み込んだ行を条件選択へ連携します。",
+              "safety": "模擬データの読み取りだけで、対象は変更しません。"
+            },
+            {
+              "text": "Where-Object",
+              "kind": "command",
+              "meaning": "条件に一致する行だけを選びます。",
+              "why": "4672イベントに監査範囲を絞れます。",
+              "safety": "模擬データの読み取りだけで、対象は変更しません。"
+            },
+            {
+              "text": "EventId",
+              "kind": "argument",
+              "meaning": "イベントIDを表すCSV列名です。",
+              "why": "対象イベントの列を明示できます。",
+              "safety": "模擬データの読み取りだけで、対象は変更しません。"
+            },
+            {
+              "text": "-eq",
+              "kind": "operator",
+              "meaning": "値の一致を比較する演算子です。",
+              "why": "4672だけを残す条件になります。",
+              "safety": "模擬データの読み取りだけで、対象は変更しません。"
+            },
+            {
+              "text": "4672",
+              "kind": "argument",
+              "meaning": "特別な権限イベントのIDです。",
+              "why": "調査対象のイベント種別を固定できます。",
+              "safety": "模擬データの読み取りだけで、対象は変更しません。"
+            },
+            {
+              "text": "|",
+              "kind": "operator",
+              "meaning": "抽出行をグループ化へ渡すパイプです。",
+              "why": "選択結果を主体別集計へ連携します。",
+              "safety": "模擬データの読み取りだけで、対象は変更しません。"
+            },
+            {
+              "text": "Group-Object",
+              "kind": "command",
+              "meaning": "同じ列値の行をまとめて数えます。",
+              "why": "主体ごとのイベント件数を比較できます。",
+              "safety": "模擬データの読み取りだけで、対象は変更しません。"
+            },
+            {
+              "text": "Account",
+              "kind": "argument",
+              "meaning": "主体名を持つCSV列名です。",
+              "why": "誰にイベントが集中したか確認できます。",
+              "safety": "模擬データの読み取りだけで、対象は変更しません。"
+            }
+          ],
+          "output": "PS> Import-Csv security-events.csv | Where-Object EventId -eq 4672 | Group-Object Account\nCount Name\n----- ----\n1     svc-report\n3     SYSTEM",
+          "evidence": "4672はAccount=svc-reportが1件、SYSTEMが3件です。svc-reportの単発イベントだけでは、権限悪用や侵害成功を断定できません。",
+          "handoff": "次は3種類のIDを時刻・主体・送信元で突き合わせ、confirmedとsuspectedを分けた報告判断を行います。",
+          "quiz": {
+            "question": "Account別集計で注意すべきことは？",
+            "choices": [
+              "件数だけで侵害確定しない",
+              "SYSTEMを削除する",
+              "全件を成功とみなす",
+              "送信元を外部接続する"
+            ],
+            "answer": 0,
+            "explain": "集計は頻度の手掛かりです。4672の件数だけで権限悪用や侵害を断定せず、他ログと相関します。"
+          }
+        },
+        {
+          "id": "ep16-m5",
+          "order": 5,
+          "title": "認証連鎖を報告する",
+          "goal": "4625・4624・4672を時刻と主体で相関し、証拠の限界と次工程を報告する",
+          "context": "失敗2件、成功1件、4672の集計がそろいました。最後に、相関できる事実と未確認の仮説を分け、可用性を損なわない次工程を決めます。",
+          "category": "Windows認証監査",
+          "command": "Import-Csv security-events.csv | Group-Object EventId",
+          "tokens": [
+            {
+              "text": "Import-Csv",
+              "kind": "command",
+              "meaning": "保存済みCSVを行オブジェクトとして読み込みます。",
+              "why": "同じ抽出条件を再現可能な証拠表で確認できます。",
+              "safety": "保存済みNorthstar Lab CSVの読み取りだけで、対象は変更しません。"
+            },
+            {
+              "text": "security-events.csv",
+              "kind": "argument",
+              "meaning": "4625・4624・4672を整形した教材用CSVです。",
+              "why": "異なるイベントを時刻・主体で並べて確認できます。",
+              "safety": "実端末のSecurityログではなく模擬データです。"
+            },
+            {
+              "text": "|",
+              "kind": "operator",
+              "meaning": "CSV行を集計処理へ渡します。",
+              "why": "イベントIDごとの観測数を比較できます。",
+              "safety": "読み込んだデータを表示集計するだけです。"
+            },
+            {
+              "text": "Group-Object",
+              "kind": "command",
+              "meaning": "指定プロパティの値ごとに行をまとめます。",
+              "why": "連鎖を構成するイベントの件数を報告できます。",
+              "safety": "集計のみで元CSVは変更しません。"
+            },
+            {
+              "text": "EventId",
+              "kind": "argument",
+              "meaning": "集計キーにするWindowsイベントID列です。",
+              "why": "4625・4624・4672を一つの表で比較できます。",
+              "safety": "列指定だけで外部操作はありません。"
+            }
+          ],
+          "output": "PS> Import-Csv security-events.csv | Group-Object EventId\nCount Name\n----- ----\n2     4625\n1     4624\n1     4672\nAssessment: confirmed=correlated events; suspected=unauthorized use; limit=no process or ticket proof.",
+          "evidence": "同一主体・送信元で4625の後に4624、近接して4672が観測されました。confirmedはログ相関まで、suspectedは不正利用の可能性に留め、プロセスやチケットの裏付けは未取得です。",
+          "handoff": "EP17ではauth・web・cloudの異種ログをUTCへ正規化し、requestIdで相関して時刻ずれの影響を確認します。可用性を守るため端末隔離は影響評価と承認後に行います。",
+          "quiz": {
+            "question": "この連鎖の最終判断として適切なのは？",
+            "choices": [
+              "侵害成功を即断する",
+              "ログを根拠に全端末停止",
+              "相関事実と仮説を分離する",
+              "資格情報を回収する"
+            ],
+            "answer": 2,
+            "explain": "3種類のイベントは追加調査の根拠ですが、プロセスや変更チケットがなく侵害成功は未確定です。"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ep17",
+      "number": 17,
+      "title": "三系統ログの時刻合わせ",
+      "subtitle": "auth・web・cloudをUTCで相関する",
+      "briefing": "Northstar Labに保存されたauth、web、cloudのCSV/JSONLをUTCへそろえます。requestId・source・userで時系列を作りますが、時計ずれと同時刻の曖昧さを明記し、時系列だけで因果を断定しません。",
+      "missions": [
+        {
+          "id": "ep17-m1",
+          "order": 1,
+          "title": "基準時刻をUTCで確認する",
+          "goal": "ログに記載されたJST時刻をUTCへ変換する基準を確認する",
+          "context": "EP16から、複数ログの時間関係を調べる段階へ進みます。まず保存済みの記録を比較するため、UTCの基準時刻を固定します。",
+          "category": "時刻正規化",
+          "command": "date -u -d 2026-08-24T09:00:00+09:00",
+          "tokens": [
+            {
+              "text": "date",
+              "kind": "command",
+              "meaning": "指定した日時を表示します。",
+              "why": "各ログの時刻変換に使う基準を確認できます。",
+              "safety": "指定日時を計算するだけで、システム時計は変更しません。"
+            },
+            {
+              "text": "-u",
+              "kind": "option",
+              "meaning": "表示をUTCとして扱うオプションです。",
+              "why": "auth・web・cloudの比較軸を統一できます。",
+              "safety": "表示基準だけを変え、時計設定は変更しません。"
+            },
+            {
+              "text": "-d",
+              "kind": "option",
+              "meaning": "指定した日時文字列を解釈するオプションです。",
+              "why": "JSTの入力をUTC表記へ変換できます。",
+              "safety": "入力日時の計算だけで外部通信はありません。"
+            },
+            {
+              "text": "2026-08-24T09:00:00+09:00",
+              "kind": "argument",
+              "meaning": "JSTの基準日時です。",
+              "why": "UTCでは00:00:00Zになることを確認します。",
+              "safety": "教材用の固定日時で、実環境の時計は読み書きしません。"
+            }
+          ],
+          "output": "$ date -u -d 2026-08-24T09:00:00+09:00\n2026-08-24 00:00:00 UTC",
+          "evidence": "JST 09:00:00はUTC 00:00:00です。以後の比較は末尾ZのUTC値にそろえます。",
+          "handoff": "次はauth.jsonlをjq -rでrequestId・source・user・timestampの表へ整形します。",
+          "quiz": {
+            "question": "-uを付ける目的は？",
+            "choices": [
+              "行を削除する",
+              "UTC表示にそろえる",
+              "JSONを暗号化する",
+              "Webへ接続する"
+            ],
+            "answer": 1,
+            "explain": "-uは表示基準をUTCにします。時計設定やログの削除は行いません。"
+          }
+        },
+        {
+          "id": "ep17-m2",
+          "order": 2,
+          "title": "認証ログを整形する",
+          "goal": "auth.jsonlから相関キーとUTC時刻を抽出する",
+          "context": "基準時刻を固定しました。まずauth系のJSONLを1行1レコードとして読み、requestId・source・userを後続の結合キーにします。",
+          "category": "時刻正規化",
+          "command": "jq -r '.requestId+\" \"+.source+\" \"+.user+\" \"+.timestamp' auth.jsonl",
+          "tokens": [
+            {
+              "text": "jq",
+              "kind": "command",
+              "meaning": "JSONデータを選択・整形します。",
+              "why": "authレコードの相関キーと時刻を列化できます。",
+              "safety": "保存済みJSONLの読み取り専用処理です。"
+            },
+            {
+              "text": "-r",
+              "kind": "option",
+              "meaning": "文字列をJSONの引用符なしで出力します。",
+              "why": "sortやjoinへ渡せるプレーンな列にします。",
+              "safety": "出力形式だけを変え、入力は変更しません。"
+            },
+            {
+              "text": ".requestId+\" \"+.source+\" \"+.user+\" \"+.timestamp",
+              "kind": "argument",
+              "meaning": "4つのJSONフィールドを空白区切りで連結する式です。",
+              "why": "requestIdを先頭キーにし、時刻と主体を同じ行で追跡できます。",
+              "safety": "フィールド抽出式であり、認証処理は実行しません。"
+            },
+            {
+              "text": "auth.jsonl",
+              "kind": "argument",
+              "meaning": "認証イベントを保存した教材用JSONLです。",
+              "why": "web・cloud側の同じrequestIdと照合します。",
+              "safety": "Northstar Labの模擬ファイルだけを読みます。"
+            }
+          ],
+          "output": "$ jq -r '.requestId+\" \"+.source+\" \"+.user+\" \"+.timestamp' auth.jsonl\nreq-7f21 203.0.113.52 maya 2026-08-24T00:03:11Z\nreq-7f22 203.0.113.52 maya 2026-08-24T00:03:18Z",
+          "evidence": "auth側ではreq-7f21とreq-7f22が同じsource・userで記録されています。時刻はUTC表記で、まだweb・cloud側の順序は未確認です。",
+          "handoff": "次はweb.jsonlも同じ列順に整形し、requestIdを先頭にして安定ソートします。",
+          "quiz": {
+            "question": "jqの-rが役立つ理由は？",
+            "choices": [
+              "引用符なしの列にする",
+              "JSONを削除する",
+              "時刻を現地化する",
+              "認証を再実行する"
+            ],
+            "answer": 0,
+            "explain": "-rは文字列を引用符なしで出力するため、後段のsortやjoinで扱いやすくなります。"
+          }
+        },
+        {
+          "id": "ep17-m3",
+          "order": 3,
+          "title": "時系列キーを安定化する",
+          "goal": "web側の記録をUTC列として整形し、requestId順にソートする",
+          "context": "auth側の2件を整形しました。web系の記録も同じ形式にし、時計ずれを調べる前に比較順を安定させます。",
+          "category": "時刻正規化",
+          "command": "jq -r '.requestId+\" \"+.source+\" \"+.user+\" \"+.timestamp' web.jsonl | sort",
+          "tokens": [
+            {
+              "text": "jq",
+              "kind": "command",
+              "meaning": "JSONLから指定フィールドを抽出します。",
+              "why": "webイベントをauthと共通の列にそろえます。",
+              "safety": "模擬webログの読み取りだけで、対象は変更しません。"
+            },
+            {
+              "text": "-r",
+              "kind": "option",
+              "meaning": "文字列を生の形式で出力します。",
+              "why": "後段のsortがキーをそのまま比較できます。",
+              "safety": "表示形式だけを変更します。"
+            },
+            {
+              "text": ".requestId+\" \"+.source+\" \"+.user+\" \"+.timestamp",
+              "kind": "argument",
+              "meaning": "requestId・source・user・timestampを連結するjq式です。",
+              "why": "異種ログの同じ比較軸を作ります。",
+              "safety": "抽出式で外部リクエストはありません。"
+            },
+            {
+              "text": "web.jsonl",
+              "kind": "argument",
+              "meaning": "Webアクセスイベントの教材用JSONLです。",
+              "why": "認証後のリクエストを同じrequestIdで追跡します。",
+              "safety": "架空のログファイルを読むだけです。"
+            },
+            {
+              "text": "|",
+              "kind": "operator",
+              "meaning": "jqの出力をsortへ渡します。",
+              "why": "抽出した行を同じ順序で比較できます。",
+              "safety": "ローカルな標準出力の受け渡しです。"
+            },
+            {
+              "text": "sort",
+              "kind": "command",
+              "meaning": "入力行をキー順に並べ替えます。",
+              "why": "requestIdの順序を安定させ、突合の抜けを減らします。",
+              "safety": "表示順だけを変え、ログ内容は変更しません。"
+            }
+          ],
+          "output": "$ jq -r '.requestId+\" \"+.source+\" \"+.user+\" \"+.timestamp' web.jsonl | sort\nreq-7f21 203.0.113.52 maya 2026-08-24T00:03:14Z\nreq-7f22 203.0.113.52 maya 2026-08-24T00:03:21Z",
+          "evidence": "web側のreq-7f21はauth側より3秒後、req-7f22も3秒後です。これは時刻差の観測であり、端末時計のずれを補正した証明ではありません。",
+          "handoff": "次はauthとwebの整形済み表をjoinし、cloud側のイベントを含める前の相関状態を確認します。",
+          "quiz": {
+            "question": "sortを入れる効果は？",
+            "choices": [
+              "ログを暗号化する",
+              "行の比較順を安定させる",
+              "通信を遮断する",
+              "時刻を自動補正する"
+            ],
+            "answer": 1,
+            "explain": "sortは行の順序を整えるだけで、時計ずれを自動補正したり通信を遮断したりはしません。"
+          }
+        },
+        {
+          "id": "ep17-m4",
+          "order": 4,
+          "title": "authとwebをキー結合する",
+          "goal": "requestIdでauthとwebを結合し、異なる時刻と同一sourceを一行で確認する",
+          "context": "auth・webを同じ4列へ整形しました。requestIdをキーに結合し、イベントの近接を確認します。ただし結合は因果の証明ではありません。",
+          "category": "異種ログ相関",
+          "command": "join -1 1 -2 1 auth.sorted web.sorted",
+          "tokens": [
+            {
+              "text": "join",
+              "kind": "command",
+              "meaning": "共通キーを持つ2つのソート済みファイルを結合します。",
+              "why": "authとwebの同一requestIdを一つの記録にまとめます。",
+              "safety": "保存済みファイルの読み取りと表示だけです。"
+            },
+            {
+              "text": "-1",
+              "kind": "option",
+              "meaning": "左ファイルの結合キー列を指定します。",
+              "why": "auth側の先頭requestIdをキーにできます。",
+              "safety": "比較列の指定でファイルは変更しません。"
+            },
+            {
+              "text": "1",
+              "kind": "argument",
+              "meaning": "左ファイルの1列目を使う指定です。",
+              "why": "requestIdを正確に選びます。",
+              "safety": "列番号の読み取り指定です。"
+            },
+            {
+              "text": "-2",
+              "kind": "option",
+              "meaning": "右ファイルの結合キー列を指定します。",
+              "why": "web側も先頭requestIdで対応させます。",
+              "safety": "結合条件だけを指定します。"
+            },
+            {
+              "text": "1",
+              "kind": "argument",
+              "meaning": "右ファイルの1列目を使う指定です。",
+              "why": "左右のrequestIdを同じ基準にできます。",
+              "safety": "表示処理のみで、内容は変更しません。"
+            },
+            {
+              "text": "auth.sorted",
+              "kind": "argument",
+              "meaning": "UTC整形済みauth表です。",
+              "why": "認証側の時刻・主体を取り込みます。",
+              "safety": "教材内の保存済み表を読みます。"
+            },
+            {
+              "text": "web.sorted",
+              "kind": "argument",
+              "meaning": "UTC整形済みweb表です。",
+              "why": "Web側の時刻・リクエストを取り込みます。",
+              "safety": "外部サイトへ接続せず、表だけを参照します。"
+            }
+          ],
+          "output": "$ join -1 1 -2 1 auth.sorted web.sorted\nreq-7f21 203.0.113.52 maya 2026-08-24T00:03:11Z 203.0.113.52 maya 2026-08-24T00:03:14Z\nreq-7f22 203.0.113.52 maya 2026-08-24T00:03:18Z 203.0.113.52 maya 2026-08-24T00:03:21Z",
+          "evidence": "2件とも同じrequestId・source・userで、webはauthの3秒後です。cloudイベント未結合のため、全体の因果関係は未確定です。",
+          "handoff": "次はcloud表を含む相関結果をawkで読み、時計ずれ・欠落・因果断定の限界を最終報告します。",
+          "quiz": {
+            "question": "joinの共通キーは？",
+            "choices": [
+              "ファイルサイズ",
+              "requestId",
+              "端末の壁紙",
+              "DNSのTTL"
+            ],
+            "answer": 1,
+            "explain": "joinは両方の1列目requestIdが一致する行を結合しています。共通キーがあっても因果は自動確定しません。"
+          }
+        },
+        {
+          "id": "ep17-m5",
+          "order": 5,
+          "title": "三系統の限界を報告する",
+          "goal": "cloudを含む時系列の一致と未確定事項を分けて報告する",
+          "context": "authとwebはrequestIdで結合できました。最後にcloud相関表を読み、各ログの時刻差を因果と取り違えない報告へまとめます。",
+          "category": "異種ログ相関",
+          "command": "awk '{print $1,$2,$3,$4}' correlated.log",
+          "tokens": [
+            {
+              "text": "awk",
+              "kind": "command",
+              "meaning": "行と列を条件に合わせて整形します。",
+              "why": "三系統をまとめた相関表から報告列を抜き出せます。",
+              "safety": "保存済み相関表の読み取りだけで、ログは変更しません。"
+            },
+            {
+              "text": "'{print $1,$2,$3,$4}'",
+              "kind": "argument",
+              "meaning": "各行の4列を表示するawkの式です。",
+              "why": "requestId・source・user・normalized timeを確認できます。",
+              "safety": "表示式であり、コマンド実行や通信は含みません。"
+            },
+            {
+              "text": "correlated.log",
+              "kind": "argument",
+              "meaning": "auth・web・cloudをUTCへ正規化した教材用表です。",
+              "why": "三系統の共通キーと正規化時刻を一度に確認します。",
+              "safety": "Northstar Labの模擬証拠だけを読みます。"
+            }
+          ],
+          "output": "$ awk '{print $1,$2,$3,$4}' correlated.log\nreq-7f21 203.0.113.52 maya 2026-08-24T00:03:11Z/auth\nreq-7f21 203.0.113.52 maya 2026-08-24T00:03:16Z/web\nreq-7f21 203.0.113.52 maya 2026-08-24T00:03:19Z/cloud",
+          "evidence": "req-7f21はauth→web→cloudの順に各5秒・3秒間隔で観測されますが、各ログの時計差や欠落はこの表だけでは算出できません。順序だけで因果を断定できず、異種ログの一致事実とfalse positive可能性を併記します。",
+          "handoff": "EP18ではalerts.jsonlとallowlist/change-ticketを比較し、相関したアラートを抑制する条件を検討します。ルール変更は実行せず、可用性と見逃しのトレードオフを記録します。",
+          "quiz": {
+            "question": "三系統の順序から言えることは？",
+            "choices": [
+              "cloudが原因と確定",
+              "順序は観測、因果は未確定",
+              "全アラートを抑制",
+              "ログを削除して再収集"
+            ],
+            "answer": 1,
+            "explain": "auth・web・cloudの順序は観測事実ですが、時計差や欠落を確認できないため因果は未確定です。"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ep18",
+      "number": 18,
+      "title": "検知ルールの過検知調整",
+      "subtitle": "アラートと承認記録を比較する",
+      "briefing": "Northstar Labのalerts.jsonlをallowlistとchange-ticketへ照合し、true positive（TP）候補とfalse positive（FP）候補を分けます。抑制条件を検討しますが、ルール変更は実行せず、見逃しを増やさない条件を判断します。",
+      "missions": [
+        {
+          "id": "ep18-m1",
+          "order": 1,
+          "title": "高重要度アラートを読む",
+          "goal": "alerts.jsonlから高重要度の候補を抽出し、識別子と対象を記録する",
+          "context": "EP17で相関したrequestIdに関連する検知がalerts.jsonlにあります。まず高重要度だけを読み、承認記録との照合候補を作ります。",
+          "category": "検知チューニング",
+          "command": "jq 'select(.severity==\"high\")' alerts.jsonl",
+          "tokens": [
+            {
+              "text": "jq",
+              "kind": "command",
+              "meaning": "JSONLを条件で選択し整形します。",
+              "why": "高重要度アラートだけを候補表へ絞ります。",
+              "safety": "保存済みアラートを読むだけで、検知設定は変えません。"
+            },
+            {
+              "text": "select(.severity==\"high\")",
+              "kind": "argument",
+              "meaning": "severityがhighのJSONオブジェクトを選ぶ式です。",
+              "why": "優先度の高い候補を見落としにくくします。",
+              "safety": "選択処理であり、アラートを抑制しません。"
+            },
+            {
+              "text": "alerts.jsonl",
+              "kind": "argument",
+              "meaning": "検知アラートを保存した教材用JSONLです。",
+              "why": "alertId・requestId・ruleを承認記録と照合します。",
+              "safety": "Northstar Labの模擬データだけを読みます。"
+            }
+          ],
+          "output": "$ jq 'select(.severity==\"high\")' alerts.jsonl\n{\"alertId\":\"A-1001\",\"severity\":\"high\",\"requestId\":\"req-7f21\",\"rule\":\"admin-path\"}\n{\"alertId\":\"A-1002\",\"severity\":\"high\",\"requestId\":\"req-7f22\",\"rule\":\"token-anomaly\"}",
+          "evidence": "高重要度候補はA-1001（admin-path）とA-1002（token-anomaly）です。重要度は真偽を意味しないため、承認・変更記録が必要です。",
+          "handoff": "次はA-1002のchange-ticketをgrepで探し、承認済み変更と一致するか確認します。",
+          "quiz": {
+            "question": "severity=highが意味しないことは？",
+            "choices": [
+              "優先確認の候補",
+              "アラートの重要度",
+              "侵害成功の確定",
+              "追加証拠が必要"
+            ],
+            "answer": 2,
+            "explain": "highは優先度を示すだけで、侵害成功やtrue positiveを確定しません。"
+          }
+        },
+        {
+          "id": "ep18-m2",
+          "order": 2,
+          "title": "変更チケットを照合する",
+          "goal": "A-1002に対応するchange-ticketの状態と対象範囲を確認する",
+          "context": "m1でA-1002が高重要度候補になりました。アラートのrequestIdだけを根拠に抑制せず、保存済み変更チケットを直接照合します。",
+          "category": "検知チューニング",
+          "command": "grep -F A-1002 change-ticket.csv",
+          "tokens": [
+            {
+              "text": "grep",
+              "kind": "command",
+              "meaning": "指定した文字列を含む行を抽出します。",
+              "why": "alertIdに対応するチケット行を確認できます。",
+              "safety": "CSVの読み取りだけで、チケット状態は変更しません。"
+            },
+            {
+              "text": "-F",
+              "kind": "option",
+              "meaning": "検索語を正規表現でなく固定文字列として扱います。",
+              "why": "A-1002を意図した識別子として正確に探せます。",
+              "safety": "検索解釈だけを固定します。"
+            },
+            {
+              "text": "A-1002",
+              "kind": "argument",
+              "meaning": "照合するアラート識別子です。",
+              "why": "特定の候補と承認記録を一対一で結びます。",
+              "safety": "識別子の検索であり、ルール実行ではありません。"
+            },
+            {
+              "text": "change-ticket.csv",
+              "kind": "argument",
+              "meaning": "変更承認の教材用CSVです。",
+              "why": "owner・window・scope・statusを確認できます。",
+              "safety": "Northstar Labの保存済み記録だけを参照します。"
+            }
+          ],
+          "output": "$ grep -F A-1002 change-ticket.csv\nA-1002,CHG-204,approved,2026-08-24T00:00Z/00:10Z,staging-token-test,owner=qa",
+          "evidence": "A-1002にはCHG-204のapproved記録があり、対象はstaging-token-test、時間窓は00:00Z〜00:10Zです。allowlistへ無条件追加できる証明ではありません。",
+          "handoff": "次はapproved行だけをawkで抽出し、対象・時間窓・ownerがアラートと一致する条件を整理します。",
+          "quiz": {
+            "question": "A-1002のチケットから分かることは？",
+            "choices": [
+              "本番全体を恒久抑制",
+              "承認済みの限定時間窓",
+              "資格情報の内容",
+              "アラート削除完了"
+            ],
+            "answer": 1,
+            "explain": "CHG-204はapprovedですが、対象と時間窓が限定されています。恒久的・全環境の抑制は正当化しません。"
+          }
+        },
+        {
+          "id": "ep18-m3",
+          "order": 3,
+          "title": "承認範囲を列で確認する",
+          "goal": "change-ticketからapprovedで対象範囲が記録された行だけを抽出する",
+          "context": "A-1002には限定された承認がありました。ほかの候補と混同しないよう、status=approvedの行を列単位で読みます。",
+          "category": "検知チューニング",
+          "command": "awk -F, '$3==\"approved\"{print}' change-ticket.csv",
+          "tokens": [
+            {
+              "text": "awk",
+              "kind": "command",
+              "meaning": "区切り文字付きの行を条件で抽出します。",
+              "why": "承認済み行だけを機械的に一覧できます。",
+              "safety": "CSVを読むだけで、承認状態は変更しません。"
+            },
+            {
+              "text": "-F,",
+              "kind": "option",
+              "meaning": "フィールド区切りをカンマに指定します。",
+              "why": "status列を正しい位置で評価できます。",
+              "safety": "解析方法の指定だけです。"
+            },
+            {
+              "text": "'$3==\"approved\"{print}'",
+              "kind": "argument",
+              "meaning": "3列目がapprovedの行を表示するawk式です。",
+              "why": "未承認や失効済みの行を承認根拠に混ぜません。",
+              "safety": "出力選択のみで、ルールやCSVを書き換えません。"
+            },
+            {
+              "text": "change-ticket.csv",
+              "kind": "argument",
+              "meaning": "変更チケットを並べた教材用CSVです。",
+              "why": "承認範囲の全体を確認できます。",
+              "safety": "架空の記録だけを読み取ります。"
+            }
+          ],
+          "output": "$ awk -F, '$3==\"approved\"{print}' change-ticket.csv\nA-1002,CHG-204,approved,2026-08-24T00:00Z/00:10Z,staging-token-test,owner=qa\nA-1004,CHG-207,approved,2026-08-24T02:00Z/02:30Z,lab-replay,owner=sec",
+          "evidence": "approvedはA-1002とA-1004に限定され、各時間窓・対象・ownerが異なります。A-1001を抑制する承認記録はありません。",
+          "handoff": "次はallowlistをアラート候補へ比較し、対象一致だけをFP候補、範囲外をTP候補として残します。",
+          "quiz": {
+            "question": "approved行を抽出する理由は？",
+            "choices": [
+              "未承認を隠すため",
+              "承認範囲を限定して確認するため",
+              "全検知を停止するため",
+              "CSVを削除するため"
+            ],
+            "answer": 1,
+            "explain": "承認済みの対象と時間窓だけを根拠にし、未承認や範囲外のアラートを抑制しないためです。"
+          }
+        },
+        {
+          "id": "ep18-m4",
+          "order": 4,
+          "title": "allowlist一致を検討する",
+          "goal": "allowlistとアラートを比較し、対象一致と範囲外を区別する",
+          "context": "承認済みの範囲が分かりました。allowlistは補助証拠にとどめ、alertId・対象・時間窓がすべて一致するかを読み取りで比較します。",
+          "category": "検知チューニング",
+          "command": "jq -r '.alertId+\" \"+.asset+\" \"+.timestamp' alerts.jsonl | grep -F -f allowlist.txt",
+          "tokens": [
+            {
+              "text": "jq",
+              "kind": "command",
+              "meaning": "アラートJSONLから比較列を抽出します。",
+              "why": "allowlistと同じalertId・asset・時刻の形式にします。",
+              "safety": "検知設定を触らず保存データを読むだけです。"
+            },
+            {
+              "text": "-r",
+              "kind": "option",
+              "meaning": "文字列を引用符なしで出力します。",
+              "why": "固定文字列比較に適した行を作ります。",
+              "safety": "出力形式の変更のみです。"
+            },
+            {
+              "text": ".alertId+\" \"+.asset+\" \"+.timestamp",
+              "kind": "argument",
+              "meaning": "3フィールドを連結するjq式です。",
+              "why": "識別子だけでなく対象と時間も比較できます。",
+              "safety": "フィールド抽出で外部操作はありません。"
+            },
+            {
+              "text": "alerts.jsonl",
+              "kind": "argument",
+              "meaning": "アラートの教材用JSONLです。",
+              "why": "allowlistとの比較元を明示します。",
+              "safety": "架空の保存ログだけを参照します。"
+            },
+            {
+              "text": "|",
+              "kind": "operator",
+              "meaning": "jqの整形結果をgrepへ渡します。",
+              "why": "allowlistにある一致候補だけを抽出できます。",
+              "safety": "ローカルな標準出力の受け渡しです。"
+            },
+            {
+              "text": "grep",
+              "kind": "command",
+              "meaning": "入力からallowlistの固定文字列に一致する行を選びます。",
+              "why": "抑制候補を機械的に拾います。",
+              "safety": "候補抽出だけでルール変更はしません。"
+            },
+            {
+              "text": "-F",
+              "kind": "option",
+              "meaning": "検索パターンを固定文字列にします。",
+              "why": "識別子の記号を正規表現として誤解しません。",
+              "safety": "比較方法を指定するだけです。"
+            },
+            {
+              "text": "-f",
+              "kind": "option",
+              "meaning": "検索語をファイルから読み込みます。",
+              "why": "承認済み候補の一覧を一括比較できます。",
+              "safety": "allowlistを読み込むだけで追加しません。"
+            },
+            {
+              "text": "allowlist.txt",
+              "kind": "argument",
+              "meaning": "限定的な許可候補を記した教材用ファイルです。",
+              "why": "承認範囲と一致する行だけを確認できます。",
+              "safety": "内容は模擬で、検知ルールへ反映しません。"
+            }
+          ],
+          "output": "$ jq -r '.alertId+\" \"+.asset+\" \"+.timestamp' alerts.jsonl | grep -F -f allowlist.txt\nA-1002 staging-token-test 2026-08-24T00:03:18Z",
+          "evidence": "A-1002だけがallowlist候補と一致しますが、00:03:18Zが承認窓内か、assetがstagingかを併せて確認する必要があります。A-1001は一致なしです。",
+          "handoff": "最後にレビュー表を読み、抑制せず残すTP候補・限定的FP候補・追加確認を報告します。",
+          "quiz": {
+            "question": "allowlist一致だけで安全に抑制できない理由は？",
+            "choices": [
+              "対象と時間窓の一致も必要",
+              "grepが読み取り専用だから",
+              "高重要度が消えるから",
+              "JSONが小さいから"
+            ],
+            "answer": 0,
+            "explain": "allowlist一致でもasset・承認時間窓・ownerを確認しないと、別環境や期限外の検知を見逃します。"
+          }
+        },
+        {
+          "id": "ep18-m5",
+          "order": 5,
+          "title": "抑制しない判断を報告する",
+          "goal": "TP・FP候補、見逃しリスク、ルール変更前の確認条件を報告する",
+          "context": "アラート、チケット、allowlistを照合しました。最後に、ルール変更そのものは実行せず、可用性と検知漏れのトレードオフを整理します。",
+          "category": "検知チューニング",
+          "command": "cat tuning-review.md",
+          "tokens": [
+            {
+              "text": "cat",
+              "kind": "command",
+              "meaning": "指定文書を標準出力へ表示します。",
+              "why": "照合結果とレビュー判断を一つの報告材料として確認できます。",
+              "safety": "教材用レビュー文書を読むだけで、ルールを変更しません。"
+            },
+            {
+              "text": "tuning-review.md",
+              "kind": "argument",
+              "meaning": "TP/FP候補と抑制条件を記した教材用レビューです。",
+              "why": "最終判断と次の承認工程を追跡できます。",
+              "safety": "Northstar Labの模擬文書だけを参照します。"
+            }
+          ],
+          "output": "$ cat tuning-review.md\nTP-candidate: A-1001 (no approved ticket; keep alert)\nFP-candidate: A-1002 (staging + CHG-204 window; validate owner and expiry)\nDo not change rule. Require scope, time, owner, rollback and replay test.",
+          "evidence": "A-1001は承認なしのため検知を維持し、A-1002は限定的FP候補に留めます。抑制前に対象・時間・owner・期限・ロールバック・再生テストが必要です。単純な抑制は見逃しを増やします。",
+          "handoff": "EP19ではasset inventory・identity・DNS・proxy・endpointを照合し、confirmed/suspected/clearedの境界と封じ込めの事業影響を判断します。",
+          "quiz": {
+            "question": "最終的にルール変更を実行しない理由は？",
+            "choices": [
+              "検知は全て誤りだから",
+              "限定条件と再生テストが未完了だから",
+              "ログが読めないから",
+              "外部通信が必要だから"
+            ],
+            "answer": 1,
+            "explain": "A-1002も限定的FP候補です。範囲・期限・owner・ロールバック・再生テストを確認してから承認判断します。"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ep19",
+      "number": 19,
+      "title": "侵害範囲の境界線",
+      "subtitle": "複数の証拠でconfirmedを定義する",
+      "briefing": "Northstar Labのasset inventory、identity、DNS、proxy、endpoint証拠を読み取りで照合します。confirmed・suspected・clearedを区別し、封じ込めの優先順位と事業影響を報告します。攻撃者の手順や変更操作は扱いません。",
+      "missions": [
+        {
+          "id": "ep19-m1",
+          "order": 1,
+          "title": "資産の重要度を確認する",
+          "goal": "asset inventoryから対象資産のowner・criticality・環境を確認する",
+          "context": "EP18のA-1001/A-1002に出た対象を資産台帳で確認します。まず資産の重要度とownerを確定し、封じ込め時の可用性影響を見積もります。",
+          "category": "範囲評価",
+          "command": "jq '.assets[]' asset-inventory.json",
+          "tokens": [
+            {
+              "text": "jq",
+              "kind": "command",
+              "meaning": "JSON配列の資産レコードを読み取ります。",
+              "why": "対象IDと重要度を同じ台帳から確認できます。",
+              "safety": "保存済み台帳の読み取りで、資産設定は変更しません。"
+            },
+            {
+              "text": ".assets[]",
+              "kind": "argument",
+              "meaning": "assets配列の各資産を選択するjq式です。",
+              "why": "ns-web-02など全候補を漏れなく確認します。",
+              "safety": "配列を読むだけです。"
+            },
+            {
+              "text": "asset-inventory.json",
+              "kind": "argument",
+              "meaning": "Northstar Labの教材用資産台帳です。",
+              "why": "owner・criticality・environmentを照合します。",
+              "safety": "実在組織の台帳ではありません。"
+            }
+          ],
+          "output": "$ jq '.assets[]' asset-inventory.json\n{\"id\":\"ns-web-02\",\"owner\":\"web-team\",\"criticality\":\"high\",\"environment\":\"staging\"}\n{\"id\":\"ns-db-01\",\"owner\":\"data-team\",\"criticality\":\"critical\",\"environment\":\"lab\"}",
+          "evidence": "ns-web-02はweb-team所有・high・staging、ns-db-01はdata-team所有・critical・labです。重要度と環境が違うため、同じ封じ込めを一括適用できません。",
+          "handoff": "次はidentity証拠で、関連ユーザーの認証事実と未確認の主体を区別します。",
+          "quiz": {
+            "question": "資産台帳のcriticalityが役立つ理由は？",
+            "choices": [
+              "封じ込め順と影響を考える",
+              "資格情報を得る",
+              "ログを削除する",
+              "DNSを変更する"
+            ],
+            "answer": 0,
+            "explain": "criticalityと環境は、調査優先度や封じ込め時の可用性影響を評価する材料です。"
+          }
+        },
+        {
+          "id": "ep19-m2",
+          "order": 2,
+          "title": "identity証拠を照合する",
+          "goal": "identity.jsonから関連ユーザー・資産・認証状態を確認する",
+          "context": "資産のownerと重要度を確認しました。次はidentity記録を読み、EP16/17の主体と同一性があるかを照合します。",
+          "category": "範囲評価",
+          "command": "jq '.identities[]' identity.json",
+          "tokens": [
+            {
+              "text": "jq",
+              "kind": "command",
+              "meaning": "JSONのidentity配列を選択して表示します。",
+              "why": "user・source・assetの結び付きを確認できます。",
+              "safety": "identity記録の読み取り専用処理です。"
+            },
+            {
+              "text": ".identities[]",
+              "kind": "argument",
+              "meaning": "identities配列の各レコードを選ぶ式です。",
+              "why": "関連主体を一件ずつ監査できます。",
+              "safety": "アカウント操作をせず記録だけを読みます。"
+            },
+            {
+              "text": "identity.json",
+              "kind": "argument",
+              "meaning": "認証主体の教材用証拠ファイルです。",
+              "why": "requestId・user・asset・statusを照合します。",
+              "safety": "Northstar Labの模擬証拠です。"
+            }
+          ],
+          "output": "$ jq '.identities[]' identity.json\n{\"requestId\":\"req-7f21\",\"user\":\"maya\",\"asset\":\"ns-web-02\",\"status\":\"observed\"}\n{\"requestId\":\"req-7f23\",\"user\":\"batch-lab\",\"asset\":\"ns-db-01\",\"status\":\"expected\"}",
+          "evidence": "req-7f21はmaya→ns-web-02としてobserved、req-7f23はbatch-lab→ns-db-01としてexpectedです。ユーザー名だけで不正と断定せず、他証拠を照合します。",
+          "handoff": "次はDNS記録でns-web-02の名前解決が期待値と一致するかを確認し、cleared候補を作ります。",
+          "quiz": {
+            "question": "status=expectedの意味は？",
+            "choices": [
+              "侵害成功",
+              "予定された記録の候補",
+              "資産削除済み",
+              "資格情報漏えい"
+            ],
+            "answer": 1,
+            "explain": "expectedは台帳上の予定された活動を示す証拠で、他ログとの矛盾がないかを確認してcleared候補にします。"
+          }
+        },
+        {
+          "id": "ep19-m3",
+          "order": 3,
+          "title": "DNSの期待値を確認する",
+          "goal": "DNS証拠でns-web-02の名前と予約IPの対応を照合する",
+          "context": "identityではreq-7f21がns-web-02に結び付きました。次にDNS記録を読み、名前解決の期待値と異常な対応を分けます。",
+          "category": "範囲評価",
+          "command": "grep ns-web-02 dns-evidence.log",
+          "tokens": [
+            {
+              "text": "grep",
+              "kind": "command",
+              "meaning": "指定名を含むDNS証拠行を抽出します。",
+              "why": "対象資産の解決先だけを確認できます。",
+              "safety": "保存済みDNS記録の検索で、名前解決を実行しません。"
+            },
+            {
+              "text": "ns-web-02",
+              "kind": "argument",
+              "meaning": "照合するNorthstar Labの資産名です。",
+              "why": "対象を一資産に限定し、別資産の値と混同しません。",
+              "safety": "予約された教材名で、実在DNSへ接続しません。"
+            },
+            {
+              "text": "dns-evidence.log",
+              "kind": "argument",
+              "meaning": "期待値と観測値を記した教材用DNS記録です。",
+              "why": "source・IP・ticketの証拠を追跡できます。",
+              "safety": "読み取り専用の模擬ファイルです。"
+            }
+          ],
+          "output": "$ grep ns-web-02 dns-evidence.log\nexpected ns-web-02.example.test -> 198.51.100.44 ticket=CHG-204\nobserved ns-web-02.example.test -> 198.51.100.44 at 2026-08-24T00:03:20Z",
+          "evidence": "ns-web-02.example.testは期待値と観測値がともに文書用IP 198.51.100.44で、CHG-204に紐付きます。DNSだけではproxyアクセスの主体や侵害有無は確定しません。",
+          "handoff": "次はproxy証拠でreq-7f21のリクエストと応答を確認し、DNS一致だけではclearedにしない理由を整理します。",
+          "quiz": {
+            "question": "DNSの期待値一致だけでclearedにしない理由は？",
+            "choices": [
+              "別証拠が未確認",
+              "IPが文書用だから",
+              "grepが遅いから",
+              "台帳がJSONだから"
+            ],
+            "answer": 0,
+            "explain": "名前解決が正しくても、アクセス主体やendpoint状態は別証拠です。複数系統を確認して境界を決めます。"
+          }
+        },
+        {
+          "id": "ep19-m4",
+          "order": 4,
+          "title": "proxyとendpointを突き合わせる",
+          "goal": "同一requestIdのproxy・endpoint記録から観測事実と未確定事項を分ける",
+          "context": "DNSは期待値と一致しました。最後にproxyとendpointの保存ログを同じrequestIdで読み、通信の観測と端末上の実行を混同しないようにします。",
+          "category": "範囲評価",
+          "command": "grep req-7f21 proxy-evidence.log",
+          "tokens": [
+            {
+              "text": "grep",
+              "kind": "command",
+              "meaning": "指定requestIdのログ行を抽出します。",
+              "why": "proxy側の観測事実をidentityと結びます。",
+              "safety": "proxyログの検索だけで通信を再現しません。"
+            },
+            {
+              "text": "req-7f21",
+              "kind": "argument",
+              "meaning": "EP17から引き継いだ相関識別子です。",
+              "why": "異種証拠が同じ観測に関係するか確認できます。",
+              "safety": "識別子検索で、リクエストを送信しません。"
+            },
+            {
+              "text": "proxy-evidence.log",
+              "kind": "argument",
+              "meaning": "proxyの教材用アクセス証拠です。",
+              "why": "source・asset・status・時刻を確認します。",
+              "safety": "Northstar Labの保存済み記録を読むだけです。"
+            }
+          ],
+          "output": "$ grep req-7f21 proxy-evidence.log\n2026-08-24T00:03:16Z req-7f21 source=203.0.113.52 asset=ns-web-02 status=404 path=/admin\n2026-08-24T00:03:17Z req-7f21 endpoint=ns-web-02 process=web-gateway result=session-denied",
+          "evidence": "proxyでは203.0.113.52から/adminへの404、endpointではweb-gatewayのsession-deniedが同一requestIdに結び付きます。実行成功や横展開は確認できず、ns-web-02はsuspected、ns-db-01は現時点でcleared候補です。",
+          "handoff": "次はboundary-report.mdを読み、confirmed/suspected/cleared、封じ込め優先度、事業影響を最終報告します。",
+          "quiz": {
+            "question": "proxyの404とendpointのdeniedから言えることは？",
+            "choices": [
+              "実行成功が確定",
+              "観測された拒否の相関",
+              "DB侵害が確定",
+              "全資産を隔離すべき"
+            ],
+            "answer": 1,
+            "explain": "同一requestIdで拒否が相関しますが、成功実行やDB侵害は示されません。範囲を狭く評価します。"
+          }
+        },
+        {
+          "id": "ep19-m5",
+          "order": 5,
+          "title": "境界と封じ込めを報告する",
+          "goal": "confirmed・suspected・未観測を根拠付きで分類し可用性と優先順位を報告する",
+          "context": "台帳・identity・DNS・proxy・endpointの証拠がそろいました。最後にboundary-report.mdを読み、過剰な隔離を避けつつ、次の承認工程へ引き継ぎます。",
+          "category": "範囲評価",
+          "command": "cat boundary-report.md",
+          "tokens": [
+            {
+              "text": "cat",
+              "kind": "command",
+              "meaning": "報告文書を表示します。",
+              "why": "複数証拠から整理された境界判断を確認できます。",
+              "safety": "教材文書の読み取りだけで封じ込めは実行しません。"
+            },
+            {
+              "text": "boundary-report.md",
+              "kind": "argument",
+              "meaning": "範囲分類と事業影響を記した教材用報告書です。",
+              "why": "次工程の優先度と確認条件を追跡できます。",
+              "safety": "架空のNorthstar Lab文書を参照します。"
+            }
+          ],
+          "output": "$ cat boundary-report.md\nconfirmed: req-7f21 proxy 404/endpoint denied on ns-web-02\nsuspected: unauthorized use of maya session; no process proof\nnot-observed: ns-db-01 batch-lab req-7f23; no conflicting evidence in checked sources\ncontainment: preserve ns-web-02 evidence; owner approval before isolation; keep ns-db-01 available",
+          "evidence": "confirmedはreq-7f21のproxy 404とendpoint deniedという観測が一致した範囲、suspectedは不正利用の仮説です。ns-db-01はchecked sourcesで矛盾を観測していないだけで、clearedとはせず継続確認します。隔離は証拠保全とweb-team承認を先にし、ns-db-01は可用性のため監視を続けます。",
+          "handoff": "EP20ではbaseline hash・service health・listener・認証エラー・回帰試験・incident summaryを読み、復旧条件と残余リスクを最終確認します。",
+          "quiz": {
+            "question": "封じ込めの優先判断として適切なのは？",
+            "choices": [
+              "全資産を即時停止",
+              "承認後に証拠保全を優先",
+              "DBを削除する",
+              "ログを上書きする"
+            ],
+            "answer": 1,
+            "explain": "ns-web-02はsuspectedの根拠があるため、owner承認と可用性影響を評価した後に証拠保全を優先します。"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ep20",
+      "number": 20,
+      "title": "復旧後の最終確認",
+      "subtitle": "復旧条件と残余リスクを閉じる",
+      "briefing": "Northstar Labの復旧後証拠を読みます。baseline hash、service health、期待listener、認証エラー、回帰試験、incident-summary.mdを突き合わせ、復旧条件を満たしたか、残余リスクと再発防止を何にするか判断します。変更・削除コマンドは使いません。",
+      "missions": [
+        {
+          "id": "ep20-m1",
+          "order": 1,
+          "title": "baseline hashを検証する",
+          "goal": "保存済みbaselineのチェック結果から復旧対象の完全性を確認する",
+          "context": "EP19でns-web-02の証拠を保全しました。復旧後の最初の条件として、保存済みbaseline.sha256の期待値と検証結果を読みます。",
+          "category": "復旧確認",
+          "command": "sha256sum -c baseline.sha256",
+          "tokens": [
+            {
+              "text": "sha256sum",
+              "kind": "command",
+              "meaning": "SHA-256チェックサムを計算・検証します。",
+              "why": "復旧後ファイルが承認済みbaselineと一致するか確認できます。",
+              "safety": "ファイルを読み取り検証するだけで、内容を変更しません。"
+            },
+            {
+              "text": "-c",
+              "kind": "option",
+              "meaning": "ファイル内のチェックサム一覧で検証します。",
+              "why": "期待値と実体の一致を再現可能に確認できます。",
+              "safety": "検証モードであり、修復や書き換えは行いません。"
+            },
+            {
+              "text": "baseline.sha256",
+              "kind": "argument",
+              "meaning": "承認済みbaselineのチェックサム一覧です。",
+              "why": "復旧条件の完全性確認の根拠になります。",
+              "safety": "Northstar Labの保存済み証拠だけを読みます。"
+            }
+          ],
+          "output": "$ sha256sum -c baseline.sha256\n/usr/local/northstar/web-gateway: OK\n/etc/northstar/policy.json: OK",
+          "evidence": "web-gatewayとpolicy.jsonがbaselineチェックサムに一致しました。完全性の条件は満たしますが、サービス可用性や認証状態は別の確認が必要です。",
+          "handoff": "次はservice-health.txtを読み、プロセスが稼働し期待状態であるかを確認します。",
+          "quiz": {
+            "question": "sha256sum -cのOKが示すことは？",
+            "choices": [
+              "内容がbaselineと一致",
+              "サービスが安全と確定",
+              "攻撃者を特定",
+              "ログを削除"
+            ],
+            "answer": 0,
+            "explain": "OKはチェックサム一致を示すだけで、サービスの健全性や攻撃者の有無は別途確認します。"
+          }
+        },
+        {
+          "id": "ep20-m2",
+          "order": 2,
+          "title": "サービス健全性を読む",
+          "goal": "復旧後サービスの状態・依存先・直近エラーを確認する",
+          "context": "baselineの完全性が確認できました。次にservice healthの記録を読み、プロセスが起動しただけでなく依存先も正常か確認します。",
+          "category": "復旧確認",
+          "command": "cat service-health.txt",
+          "tokens": [
+            {
+              "text": "cat",
+              "kind": "command",
+              "meaning": "サービス健全性の記録を表示します。",
+              "why": "状態・依存先・確認時刻を一つの証拠で読めます。",
+              "safety": "保存済みの模擬記録を読むだけです。"
+            },
+            {
+              "text": "service-health.txt",
+              "kind": "argument",
+              "meaning": "復旧後のサービスヘルスチェック結果です。",
+              "why": "web-gatewayと依存先の状態を確認します。",
+              "safety": "サービス操作や再起動は行いません。"
+            }
+          ],
+          "output": "$ cat service-health.txt\nchecked=2026-08-24T01:12:00Z\nweb-gateway=healthy dependencies=healthy\nhealth-check=200 expected; restart_count=0",
+          "evidence": "web-gatewayと依存先はhealthy、health-checkはexpected、再起動回数は0です。ヘルスチェックは機能確認の一部で、認証エラーやlistenerの確認を代替しません。",
+          "handoff": "次はexpected-listeners.txtを読み、復旧後に公開されている待受が承認済みと一致するか確認します。",
+          "quiz": {
+            "question": "health-check=200だけで十分でない理由は？",
+            "choices": [
+              "listenerと認証を未確認だから",
+              "HTTPは必ず攻撃だから",
+              "hashが不要になるから",
+              "サービスを削除するから"
+            ],
+            "answer": 0,
+            "explain": "HTTPヘルスチェックは一部機能の応答です。待受・認証エラー・回帰試験も合わせて復旧を判断します。"
+          }
+        },
+        {
+          "id": "ep20-m3",
+          "order": 3,
+          "title": "期待listenerを照合する",
+          "goal": "復旧後の待受ポートが承認済み一覧と一致するか確認する",
+          "context": "サービスと依存先はhealthyでした。次に待受の期待一覧を読み、不要な公開や復旧漏れがないか、実行操作なしで確認します。",
+          "category": "復旧確認",
+          "command": "cat expected-listeners.txt",
+          "tokens": [
+            {
+              "text": "cat",
+              "kind": "command",
+              "meaning": "期待listenerの一覧を表示します。",
+              "why": "復旧後に許可された待受だけがあるか確認できます。",
+              "safety": "一覧を読むだけで、ポートを開閉しません。"
+            },
+            {
+              "text": "expected-listeners.txt",
+              "kind": "argument",
+              "meaning": "承認済み待受の教材用一覧です。",
+              "why": "observed-listenersの比較基準になります。",
+              "safety": "Northstar Labの模擬ファイルで外部通信はありません。"
+            }
+          ],
+          "output": "$ cat expected-listeners.txt\nasset=ns-web-02 expected=tcp/443 owner=web-team\nobserved=tcp/443 state=LISTEN\nunexpected=none",
+          "evidence": "ns-web-02の待受は承認済みtcp/443のみで、unexpected=noneです。待受が期待通りでも、認証失敗やアプリ回帰は別途評価します。",
+          "handoff": "次はverification.logからauth_errorとregressionの結果を抽出し、機能回復と安全性を一緒に確認します。",
+          "quiz": {
+            "question": "unexpected=noneが示すものは？",
+            "choices": [
+              "不要な待受を観測しない",
+              "侵害が永久にない",
+              "認証が成功した",
+              "全ログが削除済み"
+            ],
+            "answer": 0,
+            "explain": "期待外の待受がないという観測であり、認証や将来のリスクが完全に消えたことまでは示しません。"
+          }
+        },
+        {
+          "id": "ep20-m4",
+          "order": 4,
+          "title": "認証と回帰試験を確認する",
+          "goal": "認証エラーと回帰試験の記録を分けて読み、復旧後の残余兆候を確認する",
+          "context": "待受は期待通りでした。最後の機械的な確認として、auth_errorとregressionの両方を抽出し、機能回復と異常の残存を混同しないようにします。",
+          "category": "復旧確認",
+          "command": "grep -E 'auth_error|regression' verification.log",
+          "tokens": [
+            {
+              "text": "grep",
+              "kind": "command",
+              "meaning": "ログから条件に一致する行を抽出します。",
+              "why": "認証エラーと回帰試験の結果を同時に確認できます。",
+              "safety": "検証ログを読むだけで、認証を再試行しません。"
+            },
+            {
+              "text": "-E",
+              "kind": "option",
+              "meaning": "複数パターンを拡張正規表現で扱います。",
+              "why": "auth_errorまたはregressionを一回で抽出できます。",
+              "safety": "検索条件だけを指定し、ログは変更しません。"
+            },
+            {
+              "text": "'auth_error|regression'",
+              "kind": "argument",
+              "meaning": "2種類の確認行に一致する検索式です。",
+              "why": "エラー残存と回帰結果を分けて読めます。",
+              "safety": "文字列検索であり、サービスへ入力しません。"
+            },
+            {
+              "text": "verification.log",
+              "kind": "argument",
+              "meaning": "復旧後検証の教材用ログです。",
+              "why": "認証状態と回帰試験の時刻を追跡できます。",
+              "safety": "Northstar Labの保存済み証拠だけを参照します。"
+            }
+          ],
+          "output": "$ grep -E 'auth_error|regression' verification.log\n2026-08-24T01:15:02Z auth_error count=0 window=15m\n2026-08-24T01:16:10Z regression=PASS suite=web-authz",
+          "evidence": "復旧後15分のauth_errorは0件で、web-authz回帰試験はPASSです。短い観測窓なので、長期監視と再発防止の確認は残ります。",
+          "handoff": "最後にincident-summary.mdを読み、復旧条件・残余リスク・再発防止を最終報告します。",
+          "quiz": {
+            "question": "auth_error count=0の限界は？",
+            "choices": [
+              "観測窓が15分に限られる",
+              "復旧失敗が確定",
+              "listenerが削除された",
+              "全ユーザーが検証済み"
+            ],
+            "answer": 0,
+            "explain": "15分間にエラーがなかったという限定的な証拠です。長期監視や追加テストが必要です。"
+          }
+        },
+        {
+          "id": "ep20-m5",
+          "order": 5,
+          "title": "復旧完了を報告する",
+          "goal": "復旧条件・残余リスク・再発防止策を根拠付きで最終報告する",
+          "context": "hash、service health、listener、認証エラー、回帰試験を確認しました。最後にincident-summary.mdを読み、完了条件と未完了のリスクを明確にしてカリキュラムを閉じます。",
+          "category": "最終報告",
+          "command": "cat incident-summary.md",
+          "tokens": [
+            {
+              "text": "cat",
+              "kind": "command",
+              "meaning": "インシデント最終概要を表示します。",
+              "why": "各証拠を統合した復旧判断と残余リスクを確認できます。",
+              "safety": "概要文書を読むだけで変更・削除は行いません。"
+            },
+            {
+              "text": "incident-summary.md",
+              "kind": "argument",
+              "meaning": "復旧条件・残余リスク・再発防止を記した教材用文書です。",
+              "why": "承認者へ事実と次工程を引き継げます。",
+              "safety": "Northstar Labの架空報告書を参照します。"
+            }
+          ],
+          "output": "$ cat incident-summary.md\nrecovery=ready: hash OK, health OK, listeners expected, auth_error=0, regression PASS\nresidual-risk: short observation window; token-anomaly rule needs scoped review\nprevention: UTC log standard, ticket-to-alert join, owner approval, replay tests\nclosure: monitor 24h and review CHG-204 expiry",
+          "evidence": "復旧条件は確認済みで、即時の変更・削除なしにreadyと報告できます。残余リスクは観測窓の短さとtoken-anomalyルールの限定レビューで、24時間監視・CHG-204期限確認・owner承認・回帰再生テストを次工程にします。",
+          "handoff": "TRACE / TYPEの全工程を完了します。最終報告は観測事実、証拠の限界、可用性とのトレードオフ、承認済みの次工程を分けて保存します。",
+          "quiz": {
+            "question": "最終報告に残すべき残余リスクは？",
+            "choices": [
+              "短い観測窓とルールレビュー",
+              "全ログの削除",
+              "資格情報の収集",
+              "実在組織への通知"
+            ],
+            "answer": 0,
+            "explain": "復旧条件を満たしても観測窓は短く、token-anomalyルールの限定レビューが残ります。監視と承認済み再発防止を引き継ぎます。"
+          }
+        }
+      ]
     }
   ]
 }
