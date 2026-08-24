@@ -233,7 +233,22 @@ test("app revalidates教材 data on load", () => {
 test("lab page busts app and stylesheet caches for the current教材 release", () => {
   const lab = fs.readFileSync(new URL("../lab.html", import.meta.url), "utf8");
   assert.match(lab, /<script\s+type="module"\s+src="app\.js\?v=20260825-home1"><\/script>/);
-  assert.match(lab, /<link\s+rel="stylesheet"\s+href="styles\.css\?v=20260825-home1">/);
+  assert.match(lab, /<link\s+rel="stylesheet"\s+href="styles\.css\?v=20260825-storycopy1">/);
+});
+
+test("episode story copy wraps in full without line clamping", () => {
+  const css = fs.readFileSync(new URL("../styles.css", import.meta.url), "utf8");
+  const subtitle = css.slice(css.indexOf("#episodeSubtitle"), css.indexOf(".episode-briefing"));
+  const briefing = css.slice(css.indexOf(".episode-briefing"), css.indexOf(".episode-progress"));
+  assert.match(subtitle, /min-width:\s*0/);
+  assert.match(subtitle, /overflow-wrap:\s*anywhere/);
+  assert.match(subtitle, /white-space:\s*normal/);
+  assert.doesNotMatch(subtitle, /text-overflow|ellipsis|nowrap/);
+  assert.match(briefing, /min-width:\s*0/);
+  assert.match(briefing, /overflow-wrap:\s*anywhere/);
+  assert.match(briefing, /white-space:\s*normal/);
+  assert.doesNotMatch(briefing, /line-clamp|box-orient|display:\s*-webkit-box|overflow:\s*hidden/);
+  assert.doesNotMatch(css, /episode-briefing[\s\S]{0,120}-webkit-line-clamp/);
 });
 
 test("app busts its module dependency caches with the same release key", () => {
@@ -368,7 +383,7 @@ test("index is the public home and lab remains the lesson page", () => {
   assert.match(index, /name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/);
   assert.match(lab, /<a class="wordmark" href="\.\/">/);
   assert.doesNotMatch(lab, /SECURITY LAB/);
-  assert.match(lab, /styles\.css\?v=20260825-home1/);
+  assert.match(lab, /styles\.css\?v=20260825-storycopy1/);
   assert.match(lab, /app\.js\?v=20260825-home1/);
   assert.match(homeCss, /@import url\('\.\/tokens\.css\?v=20260825-home2'\)/);
   assert.match(homeCss, /Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V4/);
