@@ -355,9 +355,11 @@ test("index is the public home and lab remains the lesson page", () => {
   const index = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
   const lab = fs.readFileSync(new URL("../lab.html", import.meta.url), "utf8");
   const homeCss = fs.readFileSync(new URL("../home.css", import.meta.url), "utf8");
-  assert.match(index, /<link rel="stylesheet" href="home\.css\?v=20260825-home1">/);
-  assert.match(index, /<script type="module" src="home\.js\?v=20260825-home1"><\/script>/);
-  assert.match(index, /<h1 id="homeTitle">TYPE → UNDERSTAND\.<\/h1>/);
+  assert.match(index, /<link rel="stylesheet" href="home\.css\?v=20260825-home2">/);
+  assert.match(index, /<script type="module" src="home\.js\?v=20260825-home2"><\/script>/);
+  assert.match(index, /<h1 id="homeTitle">TRACE \/ TYPE<\/h1>/);
+  assert.match(index, /<p class="home-tagline">TYPE → UNDERSTAND\.<\/p>/);
+  assert.doesNotMatch(index, /SECURITY LAB/);
   assert.match(index, /コマンドを一文字ずつ入力し、その意味と調査での役割を学びます。/);
   assert.match(index, /基礎からインシデント対応まで、続きもののエピソードで進みます。/);
   assert.match(index, /id="episodeList"[\s\S]*aria-label="エピソード一覧"/);
@@ -365,9 +367,10 @@ test("index is the public home and lab remains the lesson page", () => {
   assert.match(index, /name="description"/);
   assert.match(index, /name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/);
   assert.match(lab, /<a class="wordmark" href="\.\/">/);
+  assert.doesNotMatch(lab, /SECURITY LAB/);
   assert.match(lab, /styles\.css\?v=20260825-home1/);
   assert.match(lab, /app\.js\?v=20260825-home1/);
-  assert.match(homeCss, /@import url\('\.\/tokens\.css'\)/);
+  assert.match(homeCss, /@import url\('\.\/tokens\.css\?v=20260825-home2'\)/);
   assert.match(homeCss, /Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V4/);
   assert.match(homeCss, /contrast: pass \(40–41\)[\s\S]*icons: pass \(30\)/);
   assert.match(homeCss, /@media \(min-width: 40rem\)/);
@@ -376,6 +379,9 @@ test("index is the public home and lab remains the lesson page", () => {
   assert.match(homeCss, /\.home-hero \{[\s\S]*?max-width: 65ch[\s\S]*?padding-bottom: calc\(var\(--space-xl\) \+ var\(--space-xs\)\)/);
   assert.match(homeCss, /\.home-hero p[\s\S]*?max-width: 65ch/);
   assert.match(homeCss, /\.home-hero h1[\s\S]*?min-width: 0/);
+  assert.match(homeCss, /font: 700 var\(--text-home-title, clamp\(2\.75rem, 8vw, 5\.5rem\)\)\/1\.04 var\(--font-display\)/);
+  assert.match(homeCss, /\.home-hero \.home-tagline[\s\S]*?var\(--text-lg\)/);
+  assert.doesNotMatch(homeCss, /\.home-wordmark span/);
   assert.match(homeCss, /\.home-episode-title[\s\S]*?white-space: nowrap/);
   assert.match(homeCss, /\.home-episode-subtitle[\s\S]*?text-overflow: ellipsis[\s\S]*?white-space: nowrap/);
   assert.match(homeCss, /\.home-episode-progress[\s\S]*?font: var\(--text-xs\) var\(--font-body\)/);
@@ -389,7 +395,7 @@ test("index is the public home and lab remains the lesson page", () => {
 
 test("home builds the episode index from normalized progress", () => {
   const home = fs.readFileSync(new URL("../home.js", import.meta.url), "utf8");
-  assert.match(home, /from "\.\/progression\.js\?v=20260825-home1"/);
+  assert.match(home, /from "\.\/progression\.js\?v=20260825-home2"/);
   assert.match(home, /normalizeCompleted/);
   assert.match(home, /episodeProgress/);
   assert.match(home, /fetch\("\.\/data\/missions\.json",\s*\{\s*cache:\s*["']no-cache["']/);

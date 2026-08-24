@@ -2,7 +2,7 @@
  * genre: modern-minimal · macrostructure: Index-First · theme: Cobalt-on-warm-paper · nav: N9 · footer: Ft2 · enrichment:none · motion:none · audience: IT beginners and security career learners · use: choose an episode · tone: technical-austere
  * contrast: pass (40–41) · slop: pass (1–58) · honest: pass (46) · chrome: pass (47) · tokens: pass (48) · responsive: pass (49) · mobile: pass (34,49,50–57) · icons: pass (30) */
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@400;500;600&family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@600;700&display=swap');
-@import url('./tokens.css');
+@import url('./tokens.css?v=20260825-home2');
 
 * {
   box-sizing: border-box;
@@ -67,13 +67,6 @@ a:focus-visible {
   color: var(--color-ink);
 }
 
-.home-wordmark span {
-  display: none;
-  color: var(--color-muted);
-  font: 600 var(--text-xs) var(--font-body);
-  letter-spacing: .08em;
-}
-
 .home-resume {
   display: inline-flex;
   align-items: center;
@@ -107,13 +100,25 @@ a:focus-visible {
   min-width: 0;
   margin: 0;
   overflow-wrap: anywhere;
-  font: 700 var(--text-display)/1.08 var(--font-display);
+  font: 700 var(--text-home-title, clamp(2.75rem, 8vw, 5.5rem))/1.04 var(--font-display);
+  letter-spacing: -.025em;
 }
 
 .home-hero p {
   max-width: 65ch;
   margin: var(--space-xs) 0 0;
   color: var(--color-muted);
+}
+
+.home-hero .home-tagline {
+  margin-top: var(--space-md);
+  color: var(--color-cobalt);
+  font: 600 var(--text-lg)/1.2 var(--font-display);
+  letter-spacing: -.015em;
+}
+
+.home-hero .home-tagline + p {
+  margin-top: var(--space-md);
 }
 
 .home-index {
@@ -235,10 +240,6 @@ a:focus-visible {
 
   .home-nav {
     min-height: 64px;
-  }
-
-  .home-wordmark span {
-    display: inline;
   }
 
   .home-main {

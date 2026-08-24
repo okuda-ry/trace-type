@@ -1,7 +1,7 @@
 import {
   episodeProgress,
   normalizeCompleted,
-} from "./progression.js?v=20260825-home1";
+} from "./progression.js?v=20260825-home2";
 
 const $ = (selector) => document.querySelector(selector);
 const list = $("#episodeList");
