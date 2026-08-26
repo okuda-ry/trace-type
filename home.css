@@ -239,6 +239,10 @@ a:focus-visible {
   min-width: 0;
 }
 
+.home-credit {
+  white-space: nowrap;
+}
+
 @media (min-width: 40rem) {
   .home-nav,
   .home-main,
@@ -289,7 +293,7 @@ a:focus-visible {
     gap: var(--space-sm);
   }
 
-  .home-footer-copy {
+  .home-credit {
     text-align: right;
   }
 }
