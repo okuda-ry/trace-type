@@ -404,7 +404,7 @@ test("index is the public home and lab remains the lesson page", () => {
   const index = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
   const lab = fs.readFileSync(new URL("../lab.html", import.meta.url), "utf8");
   const homeCss = fs.readFileSync(new URL("../home.css", import.meta.url), "utf8");
-  assert.match(index, /<link rel="stylesheet" href="home\.css\?v=20260825-home2">/);
+  assert.match(index, /<link rel="stylesheet" href="home\.css\?v=20260826-credit1">/);
   assert.match(index, /<script type="module" src="home\.js\?v=20260825-home2"><\/script>/);
   assert.match(index, /<h1 id="homeTitle">TRACE \/ TYPE<\/h1>/);
   assert.match(index, /<p class="home-tagline">TYPE → UNDERSTAND\.<\/p>/);
@@ -413,6 +413,7 @@ test("index is the public home and lab remains the lesson page", () => {
   assert.match(index, /基礎からインシデント対応まで、続きもののエピソードで進みます。/);
   assert.match(index, /id="episodeList"[\s\S]*aria-label="エピソード一覧"/);
   assert.match(index, /id="homeStatus" role="status" aria-live="polite"/);
+  assert.match(index, /<footer class="home-footer">[\s\S]*<span class="home-credit">created by okokp<\/span>[\s\S]*<span class="home-footer-copy">TRACE \/ TYPE · ブラウザ内の学習環境<\/span>/);
   assert.match(index, /name="description"/);
   assert.match(index, /name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/);
   assert.match(lab, /<a class="wordmark" href="\.\/">/);
@@ -420,6 +421,8 @@ test("index is the public home and lab remains the lesson page", () => {
   assert.match(lab, /styles\.css\?v=20260825-outputcopy1/);
   assert.match(lab, /app\.js\?v=20260825-inputlayout1/);
   assert.match(homeCss, /@import url\('\.\/tokens\.css\?v=20260825-home2'\)/);
+  assert.match(homeCss, /\.home-footer\s*\{[\s\S]*display:\s*flex[\s\S]*flex-direction:\s*column[\s\S]*align-items:\s*flex-start/);
+  assert.match(homeCss, /@media \(min-width: 40rem\)[\s\S]*?\.home-footer\s*\{[\s\S]*flex-direction:\s*row[\s\S]*justify-content:\s*space-between/);
   assert.match(homeCss, /Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V4/);
   assert.match(homeCss, /contrast: pass \(40–41\)[\s\S]*icons: pass \(30\)/);
   assert.match(homeCss, /@media \(min-width: 40rem\)/);
