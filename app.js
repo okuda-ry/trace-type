@@ -28,6 +28,8 @@ let lab,
   current = 0,
   previous = "",
   started = 0,
+  lastKeydownAt = 0,
+  manualInput = false,
   completed = read("trace-v2-completed", []),
   misses = read("trace-v2-misses", {}),
   episodeIndex = 0;
@@ -268,6 +270,8 @@ function select(id) {
   episodeIndex = m.episodeIndex;
   previous = "";
   started = 0;
+  lastKeydownAt = 0;
+  manualInput = false;
   e.input.value = "";
   e.input.disabled = false;
   e.mission.textContent = m.title;
@@ -306,7 +310,9 @@ function update() {
   renderCharacters(m.command, t);
   e.accuracy.textContent = `${r.accuracy}%`;
   e.chars.textContent = r.characters;
-  e.wpm.textContent = wpm(m.command, t, started ? Date.now() - started : 0);
+  e.wpm.textContent = manualInput
+    ? "—"
+    : wpm(m.command, t, started ? Date.now() - started : 0);
   e.error.textContent = `最初の誤り: ${r.firstError < 0 ? "—" : `${r.firstError + 1}文字目`}`;
   e.misses.textContent = `累積ミス: ${misses[m.id] || 0}`;
   e.execute.disabled = t !== m.command;
@@ -511,18 +517,34 @@ function renderPalette() {
   activePaletteIndex = -1;
   setPaletteActive(0);
 }
-e.input.addEventListener("input", () => {
+e.input.addEventListener("input", (event) => {
   const m = missions[current],
     delta = mistakeKeysAdded(m.command, previous, e.input.value);
+  const inputType = event.inputType || "";
+  const keyboardInput = Date.now() - lastKeydownAt <= 500;
+  if (
+    inputType.startsWith("insertFrom") ||
+    inputType === "insertReplacementText" ||
+    (inputType.startsWith("insert") && !keyboardInput)
+  ) {
+    manualInput = true;
+  }
   if (delta) {
     misses[m.id] = (misses[m.id] || 0) + delta;
     localStorage.setItem("trace-v2-misses", JSON.stringify(misses));
   }
-  if (!started && e.input.value) started = Date.now();
+  if (!started && e.input.value) {
+    if (manualInput || !keyboardInput) {
+      manualInput = true;
+    } else {
+      started = Date.now();
+    }
+  }
   update();
   previous = e.input.value;
 });
 e.input.addEventListener("keydown", (x) => {
+  lastKeydownAt = Date.now();
   if (x.key === "Enter") {
     x.preventDefault();
     execute();
@@ -541,6 +563,7 @@ document.addEventListener("keydown", (event) => {
   event.preventDefault();
   if (event.key === "Backspace") e.input.value = e.input.value.slice(0, -1);
   else e.input.value += event.key;
+  lastKeydownAt = Date.now();
   e.input.focus();
   e.input.dispatchEvent(new Event("input", { bubbles: true }));
 });

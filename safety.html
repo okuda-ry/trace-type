@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="TRACE / TYPEの安全方針。ブラウザ内で完結する防御的なセキュリティ学習教材です。">
+  <title>安全方針 — TRACE / TYPE</title>
+  <link rel="stylesheet" href="home.css">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+</head>
+<body class="home-page">
+  <header class="home-nav" aria-label="グローバルナビゲーション">
+    <a class="home-wordmark" href="./">TRACE / TYPE</a>
+    <a class="home-resume" href="lab.html">学習を続ける →</a>
+  </header>
+  <main class="home-main">
+    <article class="home-hero" aria-labelledby="safetyTitle">
+      <p class="home-tagline">SAFETY / SCOPE</p>
+      <h1 id="safetyTitle">安全方針</h1>
+      <p>TRACE / TYPEは、セキュリティ調査の考え方を学ぶためのブラウザ教材です。実際のシステムへ接続したり、コマンドを実行したりしません。</p>
+      <h2>教材の範囲</h2>
+      <ul>
+        <li>教材内の架空ログと、読み取り・監査を目的としたコマンドだけを扱います。</li>
+        <li>実在の企業・ドメインではなく、<code>.test</code>とRFC 5737の予約済みIPを使います。</li>
+        <li>root権限の取得、サービスの変更、コンテナ操作、ファイル破壊、外部通信は扱いません。</li>
+      </ul>
+      <h2>ブラウザ内のデータ</h2>
+      <p>入力内容はブラウザ内で評価され、学習進捗とミス数はlocalStorageに保存されます。アカウント、API、教材機能からの外部データ送信はありません。表示フォントのためCSSからGoogle Fontsを参照します。</p>
+      <p><a class="home-resume" href="privacy.html">広告・プライバシー通知 →</a></p>
+      <p><a class="home-resume" href="./">トップへ戻る →</a></p>
+    </article>
+  </main>
+  <footer class="home-footer">
+    <span class="home-footer-copy">TRACE / TYPE · 防御的な学習範囲を明示しています</span>
+    <a class="home-resume" href="privacy.html">広告・プライバシー</a>
+  </footer>
+</body>
+</html>
