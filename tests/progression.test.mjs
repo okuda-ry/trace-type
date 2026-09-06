@@ -242,6 +242,8 @@ test("quiz choices use dotted labels and sponsor shows one random book", () => {
   assert.match(app, /b\.textContent = `\$\{b\.dataset\.choiceLetter\}\. \$\{choice\}`/);
   assert.match(app, /Math\.floor\(Math\.random\(\) \* books\.length\)/);
   assert.equal((lab.match(/<li hidden>/g) || []).length, 4);
+  assert.equal((lab.match(/thumbnail\.image\.rakuten\.co\.jp/g) || []).length, 4);
+  assert.equal((lab.match(/www(?:10|17)\.a8\.net\/0\.gif/g) || []).length, 4);
 });
 
 test("privacy title keeps its phrase together on the public notice page", () => {
