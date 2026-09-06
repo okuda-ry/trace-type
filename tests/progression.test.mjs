@@ -232,8 +232,23 @@ test("app revalidates教材 data on load", () => {
 
 test("lab page busts app and stylesheet caches for the current教材 release", () => {
   const lab = fs.readFileSync(new URL("../lab.html", import.meta.url), "utf8");
-  assert.match(lab, /<script\s+type="module"\s+src="app\.js\?v=20260825-inputlayout1"><\/script>/);
-  assert.match(lab, /<link\s+rel="stylesheet"\s+href="styles\.css\?v=20260825-outputcopy1">/);
+  assert.match(lab, /<script\s+type="module"\s+src="app\.js\?v=20260906-ads1"><\/script>/);
+  assert.match(lab, /<link\s+rel="stylesheet"\s+href="styles\.css\?v=20260906-ads1">/);
+});
+
+test("quiz choices use dotted labels and sponsor shows one random book", () => {
+  const app = fs.readFileSync(new URL("../app.js", import.meta.url), "utf8");
+  const lab = fs.readFileSync(new URL("../lab.html", import.meta.url), "utf8");
+  assert.match(app, /b\.textContent = `\$\{b\.dataset\.choiceLetter\}\. \$\{choice\}`/);
+  assert.match(app, /Math\.floor\(Math\.random\(\) \* books\.length\)/);
+  assert.equal((lab.match(/<li hidden>/g) || []).length, 4);
+});
+
+test("privacy title keeps its phrase together on the public notice page", () => {
+  const privacy = fs.readFileSync(new URL("../privacy.html", import.meta.url), "utf8");
+  const homeCss = fs.readFileSync(new URL("../home.css", import.meta.url), "utf8");
+  assert.match(privacy, /<h1 id="privacyTitle" class="privacy-title">広告・プライバシー通知<\/h1>/);
+  assert.match(homeCss, /\.home-hero h1\.privacy-title[\s\S]*?white-space: nowrap/);
 });
 
 test("command result output stays readable and wraps long evidence safely", () => {
@@ -261,8 +276,8 @@ test("episode story copy wraps in full without line clamping", () => {
 
 test("app busts its module dependency caches with the same release key", () => {
   const app = fs.readFileSync(new URL("../app.js", import.meta.url), "utf8");
-  assert.match(app, /from "\.\/typing-engine\.js\?v=20260825-inputlayout1"/);
-  assert.match(app, /from "\.\/progression\.js\?v=20260825-inputlayout1"/);
+  assert.match(app, /from "\.\/typing-engine\.js\?v=20260906-ads1"/);
+  assert.match(app, /from "\.\/progression\.js\?v=20260906-ads1"/);
 });
 
 test("desktop mission panel has an accessible collapsible rail", () => {
@@ -419,8 +434,8 @@ test("index is the public home and lab remains the lesson page", () => {
   assert.match(index, /name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/);
   assert.match(lab, /<a class="wordmark" href="\.\/">/);
   assert.doesNotMatch(lab, /SECURITY LAB/);
-  assert.match(lab, /styles\.css\?v=20260825-outputcopy1/);
-  assert.match(lab, /app\.js\?v=20260825-inputlayout1/);
+  assert.match(lab, /styles\.css\?v=20260906-ads1/);
+  assert.match(lab, /app\.js\?v=20260906-ads1/);
   assert.match(homeCss, /@import url\('\.\/tokens\.css\?v=20260825-home2'\)/);
   assert.match(homeCss, /\.home-footer\s*\{[\s\S]*display:\s*flex[\s\S]*flex-direction:\s*column[\s\S]*align-items:\s*flex-start/);
   assert.match(homeCss, /@media \(min-width: 40rem\)[\s\S]*?\.home-footer\s*\{[\s\S]*flex-direction:\s*row[\s\S]*justify-content:\s*space-between/);

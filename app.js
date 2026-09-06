@@ -1,4 +1,4 @@
-import { analyze, mistakeKeysAdded, tokenAt, wpm } from "./typing-engine.js?v=20260825-inputlayout1";
+import { analyze, mistakeKeysAdded, tokenAt, wpm } from "./typing-engine.js?v=20260906-ads1";
 import {
   flattenMissions,
   isMissionUnlocked,
@@ -7,7 +7,7 @@ import {
   normalizeCompleted,
   normalizeMisses,
   resolveInitialMissionId,
-} from "./progression.js?v=20260825-inputlayout1";
+} from "./progression.js?v=20260906-ads1";
 const $ = (s) => document.querySelector(s);
 const read = (k, d) => {
   try {
@@ -78,6 +78,7 @@ const e = {
   status: $("#quizStatus"),
   next: $("#nextBtn"),
   sponsor: $("#sponsor"),
+  books: $("#affiliateBooks"),
   token: $("#tokenCard"),
   meaning: $("#meaning"),
   why: $("#why"),
@@ -262,6 +263,15 @@ function renderToken(token) {
   e.why.textContent = token?.why || "調査上の役割を確認します。";
   e.safety.textContent = token?.safety || "実コマンドは実行しません。";
 }
+function renderSponsor() {
+  const books = e.books ? [...e.books.children] : [];
+  books.forEach((book) => {
+    book.hidden = true;
+  });
+  if (books.length) {
+    books[Math.floor(Math.random() * books.length)].hidden = false;
+  }
+}
 function select(id) {
   const pos = missions.findIndex((m) => m.id === id);
   if (pos < 0 || !isMissionUnlocked(lab, id, completed)) return;
@@ -343,7 +353,7 @@ function execute() {
     b.type = "button";
     b.dataset.choiceLetter = String.fromCharCode(65 + i);
     b.dataset.choiceText = choice;
-    b.textContent = `${b.dataset.choiceLetter} ${choice}`;
+    b.textContent = `${b.dataset.choiceLetter}. ${choice}`;
     b.onclick = () => answer(i, b);
     e.choices.append(b);
   });
@@ -354,11 +364,11 @@ function answer(i, b) {
   const m = missions[current];
   [...e.choices.children].forEach((choice) => {
     choice.classList.remove("correct", "wrong");
-    choice.textContent = `${choice.dataset.choiceLetter} ${choice.dataset.choiceText}`;
+    choice.textContent = `${choice.dataset.choiceLetter}. ${choice.dataset.choiceText}`;
   });
   const correct = i === m.quiz.answer;
   b.classList.add(correct ? "correct" : "wrong");
-  b.textContent = `${correct ? "✓" : "×"} ${b.dataset.choiceLetter} ${b.dataset.choiceText}`;
+  b.textContent = `${correct ? "✓" : "×"} ${b.dataset.choiceLetter}. ${b.dataset.choiceText}`;
   e.status.dataset.state = correct ? "correct" : "incorrect";
   if (i !== m.quiz.answer) {
     e.status.textContent = "× 不正解\n解説を確認して、もう一度選んでください。";
@@ -380,6 +390,7 @@ function answer(i, b) {
     e.next.hidden = true;
     e.status.textContent += " 全エピソード完了。";
   }
+  renderSponsor();
   e.sponsor.hidden = false;
   renderEpisode();
 }

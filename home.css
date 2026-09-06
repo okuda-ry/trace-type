@@ -104,6 +104,14 @@ a:focus-visible {
   letter-spacing: -.025em;
 }
 
+.home-hero h1.privacy-title {
+  overflow-wrap: normal;
+  font-size: clamp(1.5rem, 8vw, 3rem);
+  letter-spacing: -.02em;
+  text-wrap: balance;
+  white-space: nowrap;
+}
+
 .home-hero p {
   max-width: 65ch;
   margin: var(--space-xs) 0 0;
