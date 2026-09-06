@@ -1,2 +1,4 @@
 User-agent: *
 Allow: /
+
+Sitemap: https://trace-type.com/sitemap.xml

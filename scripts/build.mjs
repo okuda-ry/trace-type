@@ -25,7 +25,7 @@ for (const file of runtimeFiles) {
 
 await cp(new URL("data/", root), new URL("data/", output), { recursive: true });
 
-const optionalFiles = ["404.html", "safety.html", "privacy.html", "robots.txt", "_headers"];
+const optionalFiles = ["404.html", "safety.html", "privacy.html", "robots.txt", "sitemap.xml", "_headers"];
 for (const file of optionalFiles) {
   try {
     await access(new URL(file, root));

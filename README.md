@@ -30,6 +30,6 @@ WPMはキーボード入力の経過時間だけを表示し、貼り付けや�
 
 ## Cloudflare Pages公開
 
-Cloudflare PagesではFramework presetを使わず、Build commandを `npm test && npm run build`、Build output directoryを `dist` に設定します。`dist/404.html` と `dist/_headers` もビルドに含まれます。ドメイン確定後に `robots.txt` のSitemap URL、canonical、OGP、サイトマップを追加し、プレビューURLで表示・キーボード操作・狭い画面幅を確認してから本番ドメインを接続します。
+Cloudflare PagesではFramework presetを使わず、Build commandを `npm test && npm run build`、Build output directoryを `dist` に設定します。`dist/404.html`、`dist/_headers`、`dist/robots.txt`、`dist/sitemap.xml` もビルドに含まれます。公開ドメイン（`https://trace-type.com/`）をcanonicalとOGPの基準URLにし、トップ、ラボ、安全方針、広告・プライバシー通知にメタデータを設定しています。
 
 安全方針は [safety.html](safety.html)、広告・プライバシー通知は [privacy.html](privacy.html) に公開しています。`ui-concepts/` は公開対象から除外しています。LICENSEファイルは追加していません。
