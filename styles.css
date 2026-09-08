@@ -580,9 +580,12 @@ p {
 }
 
 .typing-feedback {
-  min-height: 2rem;
   color: var(--color-cobalt-on-dark);
   font-size: var(--text-sm);
+}
+
+.typing-feedback:not(:empty) {
+  margin-block: var(--space-2xs);
 }
 
 .action-row {
@@ -590,12 +593,13 @@ p {
   flex-direction: column-reverse;
   gap: var(--space-2xs);
   border-top: 1px solid color-mix(in oklch, var(--color-on-dark) 24%, transparent);
+  margin-top: var(--space-xs);
   padding-top: var(--space-xs);
 }
 
 .action-row > div {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-2xs);
 }
 

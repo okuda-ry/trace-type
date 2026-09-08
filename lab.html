@@ -16,7 +16,7 @@
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="TRACE / TYPE — Narrative Security Lab">
   <meta name="twitter:description" content="コマンドを一文字ずつ入力して、調査の意味と安全な考え方を学ぶブラウザ教材です。">
-  <link rel="stylesheet" href="styles.css?v=20260909-learning1">
+  <link rel="stylesheet" href="styles.css?v=20260909-learning2">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
 </head>
 <body>
@@ -84,12 +84,9 @@
           <span class="prompt">$</span>
           <input id="commandInput" class="command-input" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="コマンド入力" aria-describedby="spaceGuide typingFeedback">
         </div>
-        <div class="typing-feedback" id="typingFeedback" aria-live="polite">
-          入力を開始してください。
-        </div>
+        <div class="typing-feedback" id="typingFeedback" aria-live="polite"></div>
         <div class="action-row">
           <div>
-            <button class="button secondary" id="hintBtn" type="button">ヒント</button>
             <button class="button secondary" id="resetBtn" type="button">入力をリセット</button>
           </div>
           <button class="button primary" id="executeBtn" type="button" disabled>結果を見る</button>
@@ -162,6 +159,6 @@
       <p class="palette-hint">↑↓ 移動 · Enter 決定 · Esc 閉じる</p>
     </form>
   </dialog>
-  <script type="module" src="app.js?v=20260909-learning1"></script>
+  <script type="module" src="app.js?v=20260909-learning2"></script>
 </body>
 </html>

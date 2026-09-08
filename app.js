@@ -1,4 +1,4 @@
-import { analyze, mistakeKeysAdded, tokenAt, wpm } from "./typing-engine.js?v=20260909-learning1";
+import { analyze, mistakeKeysAdded, tokenAt, wpm } from "./typing-engine.js?v=20260909-learning2";
 import {
   flattenMissions,
   isMissionUnlocked,
@@ -7,7 +7,7 @@ import {
   normalizeCompleted,
   normalizeMisses,
   resolveInitialMissionId,
-} from "./progression.js?v=20260909-learning1";
+} from "./progression.js?v=20260909-learning2";
 const $ = (s) => document.querySelector(s);
 const read = (k, d) => {
   try {
@@ -299,7 +299,7 @@ function select(id) {
   e.chars.textContent = "0";
   e.error.textContent = "最初の誤り: —";
   e.misses.textContent = `累積ミス: ${misses[m.id] || 0}`;
-  e.feedback.textContent = "入力を開始してください。";
+  e.feedback.textContent = "";
   e.execute.disabled = true;
   e.execute.setAttribute("aria-disabled", "true");
   e.mock.textContent = "コマンドを入力すると、ここに結果が表示されます。";
@@ -342,7 +342,7 @@ function update() {
       ? "入力できました。「結果を見る」へ進んでください。"
       : r.firstError >= 0
         ? errorDetail
-        : `${t.length + 1}文字目以降が未入力です。`;
+        : "";
   const tok = tokenAt(m.command, Math.max(0, t.length - 1), m.tokens);
   renderToken(tok);
 }
@@ -588,15 +588,6 @@ document.addEventListener("keydown", (event) => {
   e.input.focus();
   e.input.dispatchEvent(new Event("input", { bubbles: true }));
 });
-$("#hintBtn").onclick = () => {
-  const m = missions[current];
-  const firstError = analyze(m.command, e.input.value).firstError;
-  const index = firstError >= 0 ? firstError : e.input.value.length;
-  const expected = m.command[index];
-  const display = expected === " " ? "スペースキーを1回" : expected ?? (firstError >= 0 ? "余分な文字を削除" : "入力完了");
-  const token = tokenAt(m.command, Math.max(0, index - 1), m.tokens);
-  e.feedback.textContent = `ヒント: ${index + 1}文字目は「${display}」。現在のトークン: ${token?.text || "—"}`;
-};
 $("#resetBtn").onclick = () => select(missions[current].id);
 e.execute.onclick = execute;
 e.next.onclick = () => {
