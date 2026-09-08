@@ -414,9 +414,10 @@ p {
 
 .practice-header h2,
 .practice-header p {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  line-height: 1.5;
 }
 
 .stats {
@@ -477,6 +478,39 @@ p {
   overflow-wrap: anywhere;
   cursor: text;
   border-radius: var(--radius-control);
+  border: 1px solid var(--color-cobalt-on-dark);
+  padding: var(--space-2xs);
+}
+
+.input-label {
+  display: block;
+  margin-top: var(--space-xs);
+  color: var(--color-on-dark);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.command-example {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2xs);
+  padding-block: var(--space-2xs);
+  font: 600 1.15rem/1.6 var(--font-code);
+}
+
+#typingOutput {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.space-guide {
+  color: var(--color-cobalt-on-dark);
+  font-size: var(--text-xs);
+}
+
+.command-line:has([aria-invalid="true"]) {
+  border-color: var(--color-warning-on-dark);
 }
 
 .command-line:focus-within {
@@ -511,19 +545,17 @@ p {
 }
 
 .command-input {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
+  flex: 1;
+  min-width: 0;
   width: 100%;
-  height: 100%;
   min-height: 44px;
   border: 0;
   background: transparent;
-  color: transparent;
-  caret-color: transparent;
+  color: var(--color-on-dark);
+  caret-color: var(--color-on-dark);
   opacity: 1;
   padding: 0;
-  font-size: max(1rem, 16px);
+  font: 600 1.15rem/1.6 var(--font-code);
   cursor: text;
 }
 
@@ -1155,7 +1187,7 @@ dialog input:disabled {
   }
 
   .practice-header p {
-    white-space: nowrap;
+    white-space: normal;
   }
 
   .stats span {
@@ -1173,6 +1205,29 @@ dialog input:disabled {
     margin-top: var(--space-3xs);
   }
 
+}
+
+@media (max-width: 59.99rem) {
+  .practice-column > .inspector {
+    margin-top: var(--space-xs);
+    padding: var(--space-sm);
+    border: 1px solid var(--color-rule);
+    border-radius: var(--radius-control);
+    background: var(--color-surface);
+  }
+
+  .practice-header .section-label {
+    width: auto;
+    padding-right: 0;
+    white-space: normal;
+  }
+
+  .stats {
+    position: static;
+    margin-top: var(--space-2xs);
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
 }
 
 @media (max-width: 39.99rem) {

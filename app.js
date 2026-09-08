@@ -1,4 +1,4 @@
-import { analyze, mistakeKeysAdded, tokenAt, wpm } from "./typing-engine.js?v=20260906-ads1";
+import { analyze, mistakeKeysAdded, tokenAt, wpm } from "./typing-engine.js?v=20260909-learning1";
 import {
   flattenMissions,
   isMissionUnlocked,
@@ -7,7 +7,7 @@ import {
   normalizeCompleted,
   normalizeMisses,
   resolveInitialMissionId,
-} from "./progression.js?v=20260906-ads1";
+} from "./progression.js?v=20260909-learning1";
 const $ = (s) => document.querySelector(s);
 const read = (k, d) => {
   try {
@@ -120,6 +120,13 @@ if (missionPanelMedia.addEventListener) {
   missionPanelMedia.addListener(syncMissionPanel);
 }
 syncMissionPanel();
+const inspector = document.querySelector(".inspector");
+function syncInspectorPlacement() {
+  if (isDesktopMissionPanel()) e.layout.append(inspector);
+  else e.terminal.after(inspector);
+}
+missionPanelMedia.addEventListener("change", syncInspectorPlacement);
+syncInspectorPlacement();
 function renderText(parent, text, tag = "span", className = "") {
   const n = document.createElement(tag);
   n.textContent = text;
@@ -243,12 +250,9 @@ function renderCharacters(target, typed) {
     const t = [...typed][i];
     n.className =
       t === undefined ? "pending" : t === c ? "correct" : "incorrect";
-    n.textContent = c === " " ? "·" : c;
+    n.textContent = c === " " ? "␣" : c;
     e.output.append(n);
   });
-  [...typed]
-    .slice(target.length)
-    .forEach((c) => renderText(e.output, c, "span", "extra"));
 }
 function renderToken(token) {
   e.token.replaceChildren();
@@ -284,6 +288,7 @@ function select(id) {
   manualInput = false;
   e.input.value = "";
   e.input.disabled = false;
+  e.input.setAttribute("aria-invalid", "false");
   e.mission.textContent = m.title;
   e.goal.textContent = m.goal;
   e.meta.textContent = `MISSION ${m.order} · ${m.category}`;
@@ -327,11 +332,16 @@ function update() {
   e.misses.textContent = `累積ミス: ${misses[m.id] || 0}`;
   e.execute.disabled = t !== m.command;
   e.execute.setAttribute("aria-disabled", String(t !== m.command));
+  e.input.setAttribute("aria-invalid", String(r.firstError >= 0));
+  const describeCharacter = (character) => character === " " ? "スペース" : `「${character}」`;
+  const errorDetail = r.firstError < 0 ? "" : r.firstError >= m.command.length
+    ? "末尾に余分な文字があります。削除してください。"
+    : `${r.firstError + 1}文字目：${describeCharacter(t[r.firstError])}が入力されています。${m.command[r.firstError] === " " ? "スペースを1つ入力してください。" : `${describeCharacter(m.command[r.firstError])}に直してください。`}`;
   e.feedback.textContent =
     t === m.command
       ? "入力できました。「結果を見る」へ進んでください。"
       : r.firstError >= 0
-        ? `最初の誤りは${r.firstError + 1}文字目です。`
+        ? errorDetail
         : `${t.length + 1}文字目以降が未入力です。`;
   const tok = tokenAt(m.command, Math.max(0, t.length - 1), m.tokens);
   renderToken(tok);
@@ -371,7 +381,7 @@ function answer(i, b) {
   b.textContent = `${correct ? "✓" : "×"} ${b.dataset.choiceLetter}. ${b.dataset.choiceText}`;
   e.status.dataset.state = correct ? "correct" : "incorrect";
   if (i !== m.quiz.answer) {
-    e.status.textContent = "× 不正解\n解説を確認して、もう一度選んでください。";
+    e.status.textContent = `× 不正解\n「${m.quiz.choices[i]}」は、この問いの答えではありません。\n${m.quiz.explain}\nコマンドの結果と照らし合わせて、もう一度選んでください。`;
     return;
   }
   completed = [...new Set([...completed, m.id])];
@@ -562,7 +572,7 @@ e.input.addEventListener("keydown", (x) => {
   }
 });
 e.terminal.addEventListener("pointerdown", (event) => {
-  if (!event.target.closest("button")) e.input.focus();
+  if (event.target.closest(".command-line") && event.target !== e.input) e.input.focus();
 });
 document.addEventListener("keydown", (event) => {
   const active = document.activeElement;
@@ -580,11 +590,12 @@ document.addEventListener("keydown", (event) => {
 });
 $("#hintBtn").onclick = () => {
   const m = missions[current];
-  const index = e.input.value.length;
+  const firstError = analyze(m.command, e.input.value).firstError;
+  const index = firstError >= 0 ? firstError : e.input.value.length;
   const expected = m.command[index];
-  const display = expected === " " ? "空白" : expected ?? "入力完了";
+  const display = expected === " " ? "スペースキーを1回" : expected ?? (firstError >= 0 ? "余分な文字を削除" : "入力完了");
   const token = tokenAt(m.command, Math.max(0, index - 1), m.tokens);
-  e.feedback.textContent = `ヒント: 次は「${display}」。現在のトークン: ${token?.text || "—"}`;
+  e.feedback.textContent = `ヒント: ${index + 1}文字目は「${display}」。現在のトークン: ${token?.text || "—"}`;
 };
 $("#resetBtn").onclick = () => select(missions[current].id);
 e.execute.onclick = execute;

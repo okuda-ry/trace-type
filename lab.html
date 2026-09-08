@@ -16,7 +16,7 @@
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="TRACE / TYPE — Narrative Security Lab">
   <meta name="twitter:description" content="コマンドを一文字ずつ入力して、調査の意味と安全な考え方を学ぶブラウザ教材です。">
-  <link rel="stylesheet" href="styles.css?v=20260906-ads1">
+  <link rel="stylesheet" href="styles.css?v=20260909-learning1">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
 </head>
 <body>
@@ -73,10 +73,16 @@
           <span id="errorMeta">最初の誤り: —</span>
           <span id="missCount">累積ミス: 0</span>
         </div>
+        <p class="input-label" id="commandExampleLabel">お手本</p>
+        <div class="command-example" aria-labelledby="commandExampleLabel">
+          <span class="prompt" aria-hidden="true">$</span>
+          <div id="typingOutput"></div>
+        </div>
+        <p class="space-guide" id="spaceGuide">␣ はスペースキーです。入力欄には通常の空白が入ります。</p>
+        <label class="input-label" for="commandInput">自分の入力</label>
         <div class="command-line">
           <span class="prompt">$</span>
-          <div id="typingOutput" aria-live="polite"></div>
-          <input id="commandInput" class="command-input" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="コマンド入力" aria-describedby="typingFeedback">
+          <input id="commandInput" class="command-input" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="コマンド入力" aria-describedby="spaceGuide typingFeedback">
         </div>
         <div class="typing-feedback" id="typingFeedback" aria-live="polite">
           入力を開始してください。
@@ -156,6 +162,6 @@
       <p class="palette-hint">↑↓ 移動 · Enter 決定 · Esc 閉じる</p>
     </form>
   </dialog>
-  <script type="module" src="app.js?v=20260906-ads1"></script>
+  <script type="module" src="app.js?v=20260909-learning1"></script>
 </body>
 </html>
