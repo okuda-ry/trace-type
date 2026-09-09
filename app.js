@@ -1,4 +1,4 @@
-import { analyze, mistakeKeysAdded, tokenAt, wpm } from "./typing-engine.js?v=20260909-learning2";
+import { analyze, mistakeKeysAdded, tokenAt, wpm } from "./typing-engine.js?v=20260909-curriculum1";
 import {
   flattenMissions,
   isMissionUnlocked,
@@ -7,7 +7,7 @@ import {
   normalizeCompleted,
   normalizeMisses,
   resolveInitialMissionId,
-} from "./progression.js?v=20260909-learning2";
+} from "./progression.js?v=20260909-curriculum1";
 const $ = (s) => document.querySelector(s);
 const read = (k, d) => {
   try {
@@ -291,6 +291,12 @@ function select(id) {
   e.input.setAttribute("aria-invalid", "false");
   e.mission.textContent = m.title;
   e.goal.textContent = m.goal;
+  const intro = lab.episodes[episodeIndex].learningIntro;
+  $("#learningIntro").hidden = !intro;
+  $("#learningIntro").open = Boolean(intro && m.order === 1);
+  $("#learningIntroTitle").textContent = intro ? `道具と読み方：${intro.title}` : "";
+  $("#learningIntroBody").textContent = intro?.body || "";
+  $("#learningIntroFocus").textContent = intro?.focus || "";
   e.meta.textContent = `MISSION ${m.order} · ${m.category}`;
   e.lessonCount.textContent =
     m.order + " / " + (lab.episodes[m.episodeIndex]?.missions.length || 0);
@@ -356,6 +362,19 @@ function execute() {
   e.status.textContent = "";
   delete e.status.dataset.state;
   e.question.textContent = m.quiz.question;
+  e.quiz.dataset.kind = m.quiz.kind || "knowledge";
+  $("#quizTitle").textContent = m.quiz.kind === "decision" ? "証拠から判断する" : "確認クイズ";
+  const evidence = $("#quizEvidence");
+  const sources = $("#quizEvidenceSources");
+  sources.replaceChildren();
+  evidence.hidden = !m.quiz.sources?.length;
+  evidence.open = false;
+  for (const id of m.quiz.sources || []) {
+    const source = missions.find((item) => item.id === id);
+    if (!source) continue;
+    renderText(sources, `MISSION ${source.order} · ${source.title}`, "h3");
+    renderText(sources, source.output, "pre");
+  }
   e.choices.replaceChildren();
   m.quiz.choices.forEach((choice, i) => {
     const b = document.createElement("button");
@@ -398,7 +417,9 @@ function answer(i, b) {
     e.next.hidden = false;
   } else {
     e.next.hidden = true;
-    e.status.textContent += " 全エピソード完了。";
+    e.status.textContent += completed.length === missions.length
+      ? " 全エピソード完了。"
+      : " このエピソードは完了です。エピソード一覧から未完了の学習に進めます。";
   }
   renderSponsor();
   e.sponsor.hidden = false;

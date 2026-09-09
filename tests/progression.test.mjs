@@ -104,12 +104,12 @@ test("outputs start with their exact command prompt", () => {
   }
 });
 
-test("choices are four unique short options with one answer", () => {
+test("choices are four unique readable options with one answer", () => {
   for (const m of all) {
     assert.equal(m.quiz.choices.length, 4, m.id);
     assert.equal(new Set(m.quiz.choices).size, 4, m.id);
     assert.ok(Number.isInteger(m.quiz.answer) && m.quiz.answer >= 0 && m.quiz.answer < 4, m.id);
-    for (const choice of m.quiz.choices) assert.ok(choice.length <= 18, m.id + ": " + choice);
+    for (const choice of m.quiz.choices) assert.ok(choice.length <= 70, m.id + ": " + choice);
   }
   assert.equal(new Set(all.map((m) => JSON.stringify(m.quiz.choices))).size, all.length);
 });
@@ -118,6 +118,45 @@ test("handoffs and quiz explanations are nonempty and unique", () => {
   assert.equal(new Set(all.map((m) => m.handoff)).size, all.length);
   assert.equal(new Set(all.map((m) => m.quiz.explain)).size, all.length);
   assert.ok(all.every((m) => m.handoff && m.quiz.explain));
+});
+
+test("each episode ends with a decision supported by its earlier evidence", () => {
+  for (const ep of data.episodes) {
+    const final = ep.missions.at(-1);
+    assert.equal(final.quiz.kind, "decision", ep.id);
+    assert.ok(final.quiz.sources.length >= 2, ep.id);
+    assert.equal(new Set(final.quiz.sources).size, final.quiz.sources.length, ep.id);
+    for (const id of final.quiz.sources) {
+      const source = ep.missions.find((mission) => mission.id === id);
+      assert.ok(source && source.order < final.order && source.output, `${ep.id}: ${id}`);
+    }
+    assert.ok(final.quiz.explain.length >= 50, ep.id);
+  }
+});
+
+test("intermediate and advanced episodes introduce their tools before practice", () => {
+  for (const ep of data.episodes.filter((episode) => episode.number >= 5)) {
+    assert.ok(ep.learningIntro.title.length > 0, ep.id);
+    assert.ok(ep.learningIntro.body.length >= 40, ep.id);
+    assert.ok(ep.learningIntro.focus.length >= 20, ep.id);
+  }
+});
+
+test("correlated req-7f21 web timestamp agrees with the preceding join", () => {
+  const ep = data.episodes.find((episode) => episode.id === "ep17");
+  const joined = ep.missions[3].output.split("\n").find((line) => line.startsWith("req-7f21 "));
+  const web = ep.missions[4].output.split("\n").find((line) => line.includes("/web"));
+  assert.equal(web.split(" ").at(-1).replace("/web", ""), joined.split(" ").at(-1));
+});
+
+test("Windows privilege-event totals match the account breakdown", () => {
+  const ep = data.episodes.find((episode) => episode.id === "ep16");
+  const counts = ep.missions[3].output.split("\n")
+    .map((line) => line.match(/^(\d+)\s+(?:svc-report|SYSTEM)$/))
+    .filter(Boolean).map((match) => Number(match[1]));
+  const total = ep.missions[4].output.match(/^(\d+)\s+4672$/m);
+  assert.equal(counts.length, 2);
+  assert.equal(Number(total[1]), counts.reduce((sum, count) => sum + count, 0));
 });
 
 test("command strings avoid dangerous operations", () => {
@@ -136,12 +175,12 @@ test("fictional targets use .test and RFC5737 addresses only", () => {
   }
 });
 
-test("expected choices for the original sixteen missions remain stable", () => {
+test("foundational knowledge answers remain stable", () => {
   const expected = {
-    "ep01-m1": "現在の作業ディレクトリ", "ep01-m2": ".case-idなど隠し項目も表示", "ep01-m3": "教材内の現在の作業ディレクトリ", "ep01-m4": "ops-traineeとNS-248",
-    "ep02-m1": "現在の有効ユーザー", "ep02-m2": "ユーザーの所属グループ", "ep02-m3": "許可ルールを実行せず確認", "ep02-m4": "restart試行は拒否・記録された",
-    "ep03-m1": "MX配送先の変更", "ep03-m2": "対応するIPv4アドレス", "ep03-m3": "ドメインのメール配送先", "ep03-m4": "MX変更の承認記録がない",
-    "ep04-m1": "大文字小文字を区別しない", "ep04-m2": "左の出力をgrepへ渡す", "ep04-m3": "一致行をerrors.txtへ送る", "ep04-m4": "同一IPの連続事象。要追加調査",
+    "ep01-m1": "現在の作業ディレクトリ", "ep01-m2": ".case-idなど隠し項目も表示", "ep01-m3": "教材内の現在の作業ディレクトリ",
+    "ep02-m1": "現在の有効ユーザー", "ep02-m2": "ユーザーの所属グループ", "ep02-m3": "許可ルールを実行せず確認",
+    "ep03-m1": "MX配送先の変更", "ep03-m2": "対応するIPv4アドレス", "ep03-m3": "ドメインのメール配送先",
+    "ep04-m1": "大文字小文字を区別しない", "ep04-m2": "左の出力をgrepへ渡す", "ep04-m3": "一致行をerrors.txtへ送る",
   };
   for (const [id, choice] of Object.entries(expected)) {
     const m = all.find((item) => item.id === id);
@@ -232,8 +271,8 @@ test("app revalidates教材 data on load", () => {
 
 test("lab page busts app and stylesheet caches for the current教材 release", () => {
   const lab = fs.readFileSync(new URL("../lab.html", import.meta.url), "utf8");
-  assert.match(lab, /<script\s+type="module"\s+src="app\.js\?v=20260909-learning2"><\/script>/);
-  assert.match(lab, /<link\s+rel="stylesheet"\s+href="styles\.css\?v=20260909-learning2">/);
+  assert.match(lab, /<script\s+type="module"\s+src="app\.js\?v=20260909-curriculum1"><\/script>/);
+  assert.match(lab, /<link\s+rel="stylesheet"\s+href="styles\.css\?v=20260909-curriculum1">/);
 });
 
 test("quiz choices use dotted labels and sponsor shows one random book", () => {
@@ -278,8 +317,8 @@ test("episode story copy wraps in full without line clamping", () => {
 
 test("app busts its module dependency caches with the same release key", () => {
   const app = fs.readFileSync(new URL("../app.js", import.meta.url), "utf8");
-  assert.match(app, /from "\.\/typing-engine\.js\?v=20260909-learning2"/);
-  assert.match(app, /from "\.\/progression\.js\?v=20260909-learning2"/);
+  assert.match(app, /from "\.\/typing-engine\.js\?v=20260909-curriculum1"/);
+  assert.match(app, /from "\.\/progression\.js\?v=20260909-curriculum1"/);
 });
 
 test("desktop mission panel has an accessible collapsible rail", () => {
@@ -436,8 +475,8 @@ test("index is the public home and lab remains the lesson page", () => {
   assert.match(index, /name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/);
   assert.match(lab, /<a class="wordmark" href="\.\/">/);
   assert.doesNotMatch(lab, /SECURITY LAB/);
-  assert.match(lab, /styles\.css\?v=20260909-learning2/);
-  assert.match(lab, /app\.js\?v=20260909-learning2/);
+  assert.match(lab, /styles\.css\?v=20260909-curriculum1/);
+  assert.match(lab, /app\.js\?v=20260909-curriculum1/);
   assert.match(homeCss, /@import url\('\.\/tokens\.css\?v=20260825-home2'\)/);
   assert.match(homeCss, /\.home-footer\s*\{[\s\S]*display:\s*flex[\s\S]*flex-direction:\s*column[\s\S]*align-items:\s*flex-start/);
   assert.match(homeCss, /@media \(min-width: 40rem\)[\s\S]*?\.home-footer\s*\{[\s\S]*flex-direction:\s*row[\s\S]*justify-content:\s*space-between/);

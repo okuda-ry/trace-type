@@ -16,7 +16,7 @@
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="TRACE / TYPE — Narrative Security Lab">
   <meta name="twitter:description" content="コマンドを一文字ずつ入力して、調査の意味と安全な考え方を学ぶブラウザ教材です。">
-  <link rel="stylesheet" href="styles.css?v=20260909-learning2">
+  <link rel="stylesheet" href="styles.css?v=20260909-curriculum1">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
 </head>
 <body>
@@ -64,6 +64,11 @@
           <span>CHARS<strong id="chars">0</strong></span>
         </div>
       </header>
+      <details class="learning-intro" id="learningIntro" hidden>
+        <summary id="learningIntroTitle">このエピソードで使う道具</summary>
+        <p id="learningIntroBody"></p>
+        <p id="learningIntroFocus"></p>
+      </details>
       <section class="terminal" aria-labelledby="terminalTitle">
         <div class="terminal-label">
           <span id="terminalTitle">コマンド入力</span>
@@ -99,6 +104,10 @@
       <section class="quiz-card" id="quiz" hidden aria-labelledby="quizTitle">
         <h2 id="quizTitle">確認クイズ</h2>
         <p id="quizQuestion"></p>
+        <details class="quiz-evidence" id="quizEvidence" hidden>
+          <summary>前のミッションの証拠を見返す</summary>
+          <div id="quizEvidenceSources"></div>
+        </details>
         <div class="choices" id="choices"></div>
         <p class="quiz-status" id="quizStatus" aria-live="polite" aria-atomic="true"></p>
         <button class="button primary" id="nextBtn" type="button" hidden>次のミッションへ</button>
@@ -159,6 +168,6 @@
       <p class="palette-hint">↑↓ 移動 · Enter 決定 · Esc 閉じる</p>
     </form>
   </dialog>
-  <script type="module" src="app.js?v=20260909-learning2"></script>
+  <script type="module" src="app.js?v=20260909-curriculum1"></script>
 </body>
 </html>

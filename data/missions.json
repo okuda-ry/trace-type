@@ -56,12 +56,12 @@
           "quiz": {
             "question": "pwdが表示した /home/analyst/case-014 は何を表しますか？",
             "choices": [
-              "現在の作業ディレクトリ",
-              "ログイン中のユーザー名",
-              "表示したファイルの内容",
-              "ネットワークアドレス"
+              "移動先候補のディレクトリ",
+              "直前に開いたファイルのパス",
+              "ホームディレクトリの固定値",
+              "現在の作業ディレクトリ"
             ],
-            "answer": 0,
+            "answer": 3,
             "explain": "pwdの出力は、現在の作業ディレクトリがcase-014であることを示します。"
           }
         },
@@ -95,12 +95,12 @@
           "quiz": {
             "question": "ls -laの-aが確認に役立った理由は？",
             "choices": [
-              "ファイルの内容を表示する",
               ".case-idなど隠し項目も表示",
-              "ファイルを削除する",
-              "DNSレコードを調べる"
+              "隠し項目だけを表示する",
+              "下位の全フォルダーも展開する",
+              "更新日時順に並べる"
             ],
-            "answer": 1,
+            "answer": 0,
             "explain": "-aは隠し項目も一覧に含めるため、.case-idとprojectsを発見できました。"
           }
         },
@@ -134,12 +134,12 @@
           "quiz": {
             "question": "cd projectsが変えるものは？",
             "choices": [
-              "ログインユーザーの権限",
-              "ファイルの内容",
               "教材内の現在の作業ディレクトリ",
-              "DNSのMXレコード"
+              "projectsを新規作成する",
+              "projectsの内容を表示する",
+              "次回ログイン時のホームを変える"
             ],
-            "answer": 2,
+            "answer": 0,
             "explain": "cd projectsは作業ディレクトリをprojectsへ切り替え、メモを読む準備をします。"
           }
         },
@@ -148,7 +148,7 @@
           "order": 4,
           "title": "置き去りのメモを読む",
           "goal": "メモの内容から担当者と変更チケットを抽出する",
-          "context": "projectsへ移動しました。置き去りのnotes.txtを読み、次の調査対象を特定します。",
+          "context": "これまでの出力と今回の記録を比較します。確認クイズの「前のミッションの証拠」から、調査済みの出力を見返せます。",
           "category": "基礎調査",
           "command": "cat notes.txt",
           "tokens": [
@@ -171,15 +171,21 @@
           "evidence": "メモは担当者ops-traineeと変更チケットNS-248を示しています。",
           "handoff": "次のエピソードでは、ops-traineeの権限委任と利用ログを監査します。",
           "quiz": {
-            "question": "notes.txtから次の権限監査へ引き継ぐ2つの情報は？",
+            "kind": "decision",
+            "question": "権限の利用履歴を次に調べます。検索の起点としてメモから引き継ぐ組合せは？",
             "choices": [
-              "projectsと.case-id",
-              "MXサーバーとIPv4",
-              "404とERROR",
-              "ops-traineeとNS-248"
+              "作業場所projectsとnotes.txt",
+              "担当者ops-traineeとNS-248",
+              "担当者ops-traineeとnotes.txt",
+              "作業場所projectsとNS-248"
             ],
-            "answer": 3,
-            "explain": "notes.txtのownerとticketが、次に監査すべき担当者と変更記録を指定します。"
+            "answer": 1,
+            "explain": "Ownerは担当者、Ticketは変更記録の識別子です。場所やファイル名だけでは、誰のどの変更を照合するか特定できません。",
+            "sources": [
+              "ep01-m1",
+              "ep01-m2",
+              "ep01-m3"
+            ]
           }
         }
       ]
@@ -235,12 +241,12 @@
           "quiz": {
             "question": "whoamiの出力ops-traineeが示すものは？",
             "choices": [
-              "変更チケット番号",
-              "現在の有効ユーザー",
-              "所属グループ一覧",
-              "接続元IP"
+              "直前の操作を承認した担当者",
+              "この端末に最初にログインした人",
+              "現在のグループ名",
+              "現在の有効ユーザー"
             ],
-            "answer": 1,
+            "answer": 3,
             "explain": "whoamiは、現在のセッションで有効なユーザー名ops-traineeを表示します。"
           }
         },
@@ -267,12 +273,12 @@
           "quiz": {
             "question": "idのgroups欄から確認できることは？",
             "choices": [
-              "作業ディレクトリ",
-              "DNSレコード",
               "ユーザーの所属グループ",
-              "ファイル内容"
+              "所属グループの承認日時",
+              "現在有効なグループだけ",
+              "そのユーザーが使った全権限"
             ],
-            "answer": 2,
+            "answer": 0,
             "explain": "idのgroups欄はops-traineeがopsとaudit-reviewに所属することを示します。"
           }
         },
@@ -306,12 +312,12 @@
           "quiz": {
             "question": "sudo -lを使う目的は？",
             "choices": [
-              "サービスを再起動する",
-              "ログファイルを削除する",
-              "別ユーザーへ切り替える",
-              "許可ルールを実行せず確認"
+              "全ユーザーの許可を一括確認",
+              "許可ルールを実行せず確認",
+              "過去のsudo成功履歴を確認",
+              "現在実行中の管理者操作を確認"
             ],
-            "answer": 3,
+            "answer": 1,
             "explain": "sudo -lは許可ルールを表示するだけで、委任されたコマンドを実行しません。"
           }
         },
@@ -320,7 +326,7 @@
           "order": 4,
           "title": "拒否された利用を監査する",
           "goal": "auth.logから拒否イベントの時刻・ユーザー・送信元を記録する",
-          "context": "許可はstatus確認だけでした。実利用ログから逸脱した試行の結果を確認します。",
+          "context": "これまでの出力と今回の記録を比較します。確認クイズの「前のミッションの証拠」から、調査済みの出力を見返せます。",
           "category": "権限監査",
           "command": "grep sudo auth.log",
           "tokens": [
@@ -350,15 +356,21 @@
           "evidence": "許可外のrestart試行はdeniedで、時刻・ops-trainee・203.0.113.17を特定できます。",
           "handoff": "次はsource=203.0.113.17とNS-248をDNS変更ログで照合します。",
           "quiz": {
-            "question": "この監査ログから断定できることは？",
+            "kind": "decision",
+            "question": "この記録を調査メモに残すなら、結果を正しく表す記述は？",
             "choices": [
-              "restart試行は拒否・記録された",
-              "管理者操作が成功した",
-              "サービス停止が完了した",
-              "ログが削除された"
+              "restartが拒否されたのでサービスは停止中である",
+              "restart試行は拒否された。実際の稼働状態は別途確認する",
+              "sudoの利用記録があるので管理者権限は取得できた",
+              "restartは成功したが、承認だけが拒否された"
             ],
-            "answer": 0,
-            "explain": "result=deniedなので成功とは断定せず、時刻・ユーザー・送信元を監査記録に残します。"
+            "answer": 1,
+            "explain": "result=deniedはこの試行の拒否を示します。サービスの稼働状態や、別の操作の成功まではこの行から判断できません。",
+            "sources": [
+              "ep02-m1",
+              "ep02-m2",
+              "ep02-m3"
+            ]
           }
         }
       ]
@@ -421,10 +433,10 @@
           "quiz": {
             "question": "dns-change.logでチケットが欠けている変更はどれですか？",
             "choices": [
-              "A値198.51.100.24",
-              "ticket NS-248",
+              "AとMXの両方の変更",
+              "Aレコードの変更",
               "MX配送先の変更",
-              "203.0.113.17"
+              "このログの全変更にチケットがある"
             ],
             "answer": 2,
             "explain": "MX変更のticketがNONEで、承認記録が欠けています。A変更にはNS-248があります。"
@@ -467,12 +479,12 @@
           "quiz": {
             "question": "Aレコード198.51.100.24が表すものは？",
             "choices": [
-              "メール配送の優先度",
-              "ログインユーザー",
-              "変更チケット",
-              "対応するIPv4アドレス"
+              "対応するIPv4アドレス",
+              "名前に対応するIPv6アドレス",
+              "問い合わせに使った端末のIP",
+              "メール配送先の優先順位"
             ],
-            "answer": 3,
+            "answer": 0,
             "explain": "Aレコードはexample.testをIPv4アドレス198.51.100.24へ対応づけます。"
           }
         },
@@ -513,12 +525,12 @@
           "quiz": {
             "question": "-type=MXで確認している情報は？",
             "choices": [
+              "メール配送の成功履歴",
+              "問い合わせ先DNSサーバーだけ",
               "ドメインのメール配送先",
-              "Webサーバーのファイル一覧",
-              "現在のユーザー",
-              "認証ログの件数"
+              "ドメインのIPv4アドレス"
             ],
-            "answer": 0,
+            "answer": 2,
             "explain": "MXレコードはexample.test宛のメールを受け取る配送先を示します。"
           }
         },
@@ -527,7 +539,7 @@
           "order": 4,
           "title": "チケット欠落を特定する",
           "goal": "MX変更行だけを抽出し、ticket=NONEとsourceを確認する",
-          "context": "配送先が一致したため、変更記録からMX行だけを抽出して承認情報を確認します。",
+          "context": "これまでの出力と今回の記録を比較します。確認クイズの「前のミッションの証拠」から、調査済みの出力を見返せます。",
           "category": "DNS調査",
           "command": "grep MX dns-change.log",
           "tokens": [
@@ -557,15 +569,21 @@
           "evidence": "抽出したMX行はticket=NONEで、source=203.0.113.17です。",
           "handoff": "次はsource=203.0.113.17とNS-248を認証・アクセス・アプリログで相関します。",
           "quiz": {
-            "question": "抽出したMX変更で監査上もっとも重要な点は？",
+            "kind": "decision",
+            "question": "MX変更の承認を調べるため、次に照合する記録は？",
             "choices": [
-              "TTLが300であること",
-              "MX変更の承認記録がない",
-              "AレコードがIPv4であること",
-              "教材DNSサーバー名"
+              "AレコードのIPv4アドレス一覧",
+              "現在のMX値だけを記載したDNS応答",
+              "現在のTTLとメール配送優先度の一覧",
+              "変更時刻・対象名・送信元に対応する承認台帳"
             ],
-            "answer": 1,
-            "explain": "MX行のticket=NONEは承認記録がないことを示すため、sourceとともに監査対象にします。"
+            "answer": 3,
+            "explain": "ticket=NONEはこの行にチケットがないという事実です。未承認だったかは、変更時刻・example.test・送信元を承認台帳と照合して判断します。",
+            "sources": [
+              "ep03-m1",
+              "ep03-m2",
+              "ep03-m3"
+            ]
           }
         }
       ]
@@ -642,12 +660,12 @@
           "quiz": {
             "question": "grepの-iオプションを付けた理由は？",
             "choices": [
-              "行番号だけ表示",
-              "結果をファイルへ保存",
-              "IPを名前解決",
-              "大文字小文字を区別しない"
+              "検索語を正規表現として扱わない",
+              "一致した行を除外する",
+              "大文字小文字を区別しない",
+              "一致する文字列だけ表示する"
             ],
-            "answer": 3,
+            "answer": 2,
             "explain": "-iによりFAILEDとfailedの大文字小文字を区別せず、両方の拒否イベントを拾えます。"
           }
         },
@@ -702,12 +720,12 @@
           "quiz": {
             "question": "このコマンドで | が行っていることは？",
             "choices": [
+              "左の処理が失敗したときだけ右を実行",
               "左の出力をgrepへ渡す",
-              "2ファイルを削除",
-              "404をDNSへ送る",
-              "ユーザーを変更"
+              "両方の出力を結合して保存",
+              "右の出力を左の入力へ渡す"
             ],
-            "answer": 0,
+            "answer": 1,
             "explain": "パイプはcatの出力をgrepへ渡し、404を含むアクセス行だけを後段で抽出します。"
           }
         },
@@ -762,10 +780,10 @@
           "quiz": {
             "question": "`> errors.txt` が表す処理は？",
             "choices": [
-              "errors.txtを検索語にする",
+              "一致行を末尾へ追記する",
               "一致行をerrors.txtへ送る",
-              "DNS名として調べる",
-              "認証ログを削除"
+              "画面表示だけで保存はしない",
+              "errors.txtの中で検索する"
             ],
             "answer": 1,
             "explain": "> はgrepの一致行をerrors.txtへ送る記号です。ブラウザ内ではファイル作成を行いません。"
@@ -776,7 +794,7 @@
           "order": 4,
           "title": "報告用の時系列を読む",
           "goal": "認証・アクセス・アプリの記録を時系列で相関し、観測事実と未確定事項を分ける",
-          "context": "ERROR行をerrors.txtへ整理しました。最後に3種類のログを同じ送信元と時刻で読み合わせます。",
+          "context": "これまでの出力と今回の記録を比較します。確認クイズの「前のミッションの証拠」から、調査済みの出力を見返せます。",
           "category": "ログ分析",
           "command": "cat errors.txt",
           "tokens": [
@@ -795,19 +813,25 @@
               "safety": "表示内容は架空で、実ファイルの読み書きはありません。"
             }
           ],
-          "output": "$ cat errors.txt\n2026-08-23T09:24:07Z ERROR path=/admin event=session-denied source=203.0.113.17\n2026-08-23T09:24:32Z ERROR path=/backup event=session-denied source=203.0.113.17\n09:14 failed login, 09:22 /admin 404, 09:23 /backup 404, and 09:24 app ERROR share the source.\nCorrelation is not confirmation of compromise.",
+          "output": "$ cat errors.txt\n2026-08-23T09:24:07Z ERROR path=/admin event=session-denied source=203.0.113.17\n2026-08-23T09:24:32Z ERROR path=/backup event=session-denied source=203.0.113.17",
           "evidence": "09:14-15のfailed、09:22-23の404、09:24のERRORが同じ203.0.113.17に結び付きますが、侵害確定とは断定できません。",
           "handoff": "最終報告では観測事実・未確定事項・推奨する追加確認を分けて記載します。",
           "quiz": {
-            "question": "3種類のログを相関した時点で適切な結論は？",
+            "kind": "decision",
+            "question": "3種類のログをまとめるとき、根拠を超えない報告は？",
             "choices": [
-              "侵害成功が確定",
-              "記録を破棄",
-              "同一IPの連続事象。要追加調査",
-              "実在送信元へ接続"
+              "同じ送信元が3種類のログにあるため侵入成功とする",
+              "同じ送信元の失敗・404・拒否を確認。成功の裏付けは未取得",
+              "認証失敗があるため、その後の要求もすべて失敗とする",
+              "404とERRORがあるため同じ要求が3回失敗したとする"
             ],
-            "answer": 2,
-            "explain": "同一送信元の連続事象は追加調査の根拠になりますが、ログだけで侵害成功とは断定しません。"
+            "answer": 1,
+            "explain": "時刻と送信元は関連を調べる材料ですが、要求の同一性や侵入成功の証明ではありません。観測した失敗・404・拒否と、未取得の成功証拠を分けて報告します。",
+            "sources": [
+              "ep04-m1",
+              "ep04-m2",
+              "ep04-m3"
+            ]
           }
         }
       ]
@@ -856,12 +880,12 @@
           "quiz": {
             "question": "この出力から確認できる事実は？",
             "choices": [
+              "同じ接続元なので同一人物と確定",
               "2件の認証失敗",
-              "認証成功が完了",
-              "IPの所有者",
-              "侵害が確定"
+              "2人の利用者が認証に失敗",
+              "失敗後の成功もこの出力で確認"
             ],
-            "answer": 0,
+            "answer": 1,
             "explain": "00:17:04Zと00:18:11Zのresult=failedが、同一ユーザー・IPの2件を示します。成功やIP所有者までは示しません。"
           }
         },
@@ -902,12 +926,12 @@
           "quiz": {
             "question": "awk出力で成功を示す欄は？",
             "choices": [
-              "最初の時刻",
               "result=success",
               "user欄",
+              "最初の時刻",
               "sourceのIP"
             ],
-            "answer": 1,
+            "answer": 0,
             "explain": "00:19:03Zの行にresult=successがあり、認証処理が成功した記録だと読めます。"
           }
         },
@@ -955,10 +979,10 @@
           "quiz": {
             "question": "cutの-d=が指定するものは？",
             "choices": [
-              "UTCへの変換",
-              "2番目のIP",
+              "等号を含む行だけ抽出する",
+              "等号を空白に置き換える",
               "等号の区切り",
-              "出力ファイル"
+              "2文字目から切り出す"
             ],
             "answer": 2,
             "explain": "-d=は等号を区切り文字にする指定で、-f2と組み合わせてuser属性の値を抜き出します。"
@@ -1015,9 +1039,9 @@
           "quiz": {
             "question": "uniq -cの2は何を表す？",
             "choices": [
-              "IPの末尾",
-              "時刻差2分",
-              "成功を2回保証",
+              "異なる端末からの2接続",
+              "異なる成功セッションが必ず2件",
+              "2人の利用者を識別した結果",
               "共有主体の2行"
             ],
             "answer": 3,
@@ -1029,7 +1053,7 @@
           "order": 5,
           "title": "追加確認へ引き継ぐ",
           "goal": "成功セッションの周辺証拠を読み、侵害を断定せず確認事項を整理する",
-          "context": "失敗2件、成功1件、共有主体2セッションという流れが見えました。session.logでチケットと端末属性を確認して判断します。",
+          "context": "これまでの出力と今回の記録を比較します。確認クイズの「前のミッションの証拠」から、調査済みの出力を見返せます。",
           "category": "判断と引継ぎ",
           "command": "grep \"northstar-shared\" session.log",
           "tokens": [
@@ -1059,18 +1083,30 @@
           "evidence": "成功セッションはticket=NONEで始まり、1分後にread-reportがNS-392で記録されています。業務承認の有無はNS-392の台帳確認が必要です。",
           "handoff": "EP06では、この00:19Z前後の証跡をUTCとローカル時刻、NTP状態をそろえて再確認します。侵害断定は保留します。",
           "quiz": {
-            "question": "この段階の適切な判断は？",
+            "kind": "decision",
+            "question": "NS-392が開始時のログインも承認していたか、次に何を確認しますか？",
             "choices": [
-              "追加台帳確認へ進む",
-              "記録を削除",
-              "侵害成功と断定",
-              "共有アカウントを停止"
+              "NS-392の対象アカウント・端末・承認時間帯",
+              "同じIPのセッション件数が2件以上あること",
+              "NS-392という番号が後の行にも存在することだけ",
+              "read-reportが成功した時刻だけ"
             ],
             "answer": 0,
-            "explain": "成功と操作は記録されていますが、開始行ticket=NONEの意味は台帳照合が必要です。ログだけで侵害とは断定しません。"
+            "explain": "開始行はticket=NONEです。後続行にNS-392があっても開始時の承認は保証されないため、台帳の主体・端末・時間帯を開始行と比較します。",
+            "sources": [
+              "ep05-m1",
+              "ep05-m2",
+              "ep05-m3",
+              "ep05-m4"
+            ]
           }
         }
-      ]
+      ],
+      "learningIntro": {
+        "title": "grep・awk・cut・sort・uniq",
+        "body": "ログは1行が1件の記録です。grepは行を絞り、awkやcutは必要な項目を取り出します。sortとuniqは重複の比較に使います。",
+        "focus": "行数と、利用者数・成功回数は別です。何を1件として数えているか確認しましょう。"
+      }
     },
     {
       "id": "ep06",
@@ -1109,10 +1145,10 @@
           "quiz": {
             "question": "date -uの-uは何を選ぶ？",
             "choices": [
-              "ユーザー一覧",
+              "ログの更新時刻表示",
               "UTC表示",
-              "更新日時",
-              "暗号化方式"
+              "端末のローカル時刻表示",
+              "端末の時計をUTCに設定"
             ],
             "answer": 1,
             "explain": "-uはUTC表示を選び、Z付きログと同じ時間軸で比較するために使います。"
@@ -1148,12 +1184,12 @@
           "quiz": {
             "question": "この結果から読める状態は？",
             "choices": [
-              "NTP同期済み",
-              "時計が停止",
-              "UTC+09で未同期",
-              "外部接続成功"
+              "UTC表記なので同期も保証",
+              "UTC+09で同期済み",
+              "未同期なので時計の値はすべて無効",
+              "UTC+09で未同期"
             ],
-            "answer": 2,
+            "answer": 3,
             "explain": "Asia/TokyoはUTC+09ですが、synchronized=noなのでNTPサービスがactiveでも同期完了とは言えません。"
           }
         },
@@ -1194,12 +1230,12 @@
           "quiz": {
             "question": "audit.logのutc欄の利点は？",
             "choices": [
-              "主体を隠す",
-              "ログを書き換える",
-              "NTPを有効化",
-              "共通の時刻軸"
+              "共通の時刻軸",
+              "ログ欠落を補完する",
+              "イベント間の因果を確定する",
+              "各端末の時計誤差も除去"
             ],
-            "answer": 3,
+            "answer": 0,
             "explain": "utc=...Zは共通のUTC軸を提供しますが、local値とのずれは同期状態と併せて評価します。"
           }
         },
@@ -1240,12 +1276,12 @@
           "quiz": {
             "question": "-k1,1で基準にした列は？",
             "choices": [
+              "時刻の秒部分だけ",
               "UTCの1列目",
-              "ticket列",
-              "ユーザー列",
-              "localの末尾"
+              "行全体の文字列",
+              "2列目のイベント名"
             ],
-            "answer": 0,
+            "answer": 1,
             "explain": "-k1,1は先頭列だけをキーにし、events.logのUTCタイムスタンプ順へそろえます。"
           }
         },
@@ -1254,7 +1290,7 @@
           "order": 5,
           "title": "時刻証跡の限界を報告する",
           "goal": "正規化結果とNTP未同期を結び、追加収集事項を判断する",
-          "context": "UTC順は復元できましたが、端末は同期済みではありません。最後に監査メモで、どの結論を保留すべきか確認します。",
+          "context": "これまでの出力と今回の記録を比較します。確認クイズの「前のミッションの証拠」から、調査済みの出力を見返せます。",
           "category": "判断と引継ぎ",
           "command": "awk '{print $1,$2,$3}' events.log",
           "tokens": [
@@ -1284,18 +1320,30 @@
           "evidence": "UTC順の3イベントと22秒のclock-driftを簡潔に示せます。ただし、端末未同期のため秒単位の前後関係は再収集が必要です。",
           "handoff": "EP07では、同じNS-392の配布ファイルについてbaseline hashと更新時刻を照合し、改変範囲を特定します。",
           "quiz": {
-            "question": "m5で保留すべき結論は？",
+            "kind": "decision",
+            "question": "数秒差の別ログとこの記録を比較したいとき、最初に補う情報は？",
             "choices": [
-              "イベントが3件ある",
-              "秒単位の厳密順序",
-              "UTC列が存在する",
-              "NTPが未同期"
+              "UTC表記になっていることだけ",
+              "各端末の時計差の向き・測定時点と同期状態",
+              "時刻文字列の昇順ソート結果だけ",
+              "イベントが3件あることの再集計"
             ],
             "answer": 1,
-            "explain": "clock-drift=22sとsynchronized=noがあるため、イベントの存在は言えても秒単位の厳密な前後は保留します。"
+            "explain": "UTCは表記の基準をそろえますが時計の誤差を除きません。22秒のずれがいつ・どちら向きに生じたかを確認してから、数秒差の順序を評価します。",
+            "sources": [
+              "ep06-m1",
+              "ep06-m2",
+              "ep06-m3",
+              "ep06-m4"
+            ]
           }
         }
-      ]
+      ],
+      "learningIntro": {
+        "title": "UTC・date・timedatectl",
+        "body": "UTCは時刻を比較する共通の基準です。dateは時刻の表示、timedatectl statusは端末の時刻設定や同期状態の確認に使います。",
+        "focus": "ZはUTC、+09:00はUTCから9時間進んだ表記です。表記をそろえても時計の誤差は残ります。"
+      }
     },
     {
       "id": "ep07",
@@ -1334,12 +1382,12 @@
           "quiz": {
             "question": "sha256sumの値が主に示すものは？",
             "choices": [
-              "通信ポート",
-              "所有ユーザー",
               "内容の指紋",
-              "更新承認者"
+              "配布元の本人確認",
+              "ファイルの更新時刻",
+              "承認済みの変更番号"
             ],
-            "answer": 2,
+            "answer": 0,
             "explain": "SHA-256はファイル内容の指紋で、baselineとの一致・不一致を確認する材料です。"
           }
         },
@@ -1380,9 +1428,9 @@
           "quiz": {
             "question": "FAILEDが意味することは？",
             "choices": [
-              "削除が完了",
-              "配布が成功",
-              "所有者が正当",
+              "基準の署名が未承認",
+              "ファイルの悪性が確定",
+              "更新時刻だけが不一致",
               "内容が基準と不一致"
             ],
             "answer": 3,
@@ -1419,12 +1467,12 @@
           "quiz": {
             "question": "statのModifyが示すものは？",
             "choices": [
-              "最終更新時刻",
-              "内容のハッシュ",
-              "実行成功",
-              "通信元IP"
+              "必ずファイル作成時刻",
+              "最終アクセス時刻",
+              "所有者などの変更時刻",
+              "最終更新時刻"
             ],
-            "answer": 0,
+            "answer": 3,
             "explain": "Modifyはファイルの更新時刻です。00:20:32 UTCという値だけでは誰が変更したかは分かりません。"
           }
         },
@@ -1486,12 +1534,12 @@
           "quiz": {
             "question": "findの結果から言えることは？",
             "choices": [
-              "改変者が確定",
+              "変更した主体が3人いる",
+              "3件すべてが未承認の変更",
               "3件が更新候補",
-              "侵害が成功",
-              "復旧が完了"
+              "3件すべてが新規作成"
             ],
-            "answer": 1,
+            "answer": 2,
             "explain": "指定時刻より新しい通常ファイルが3件見つかっただけで、改変者や侵害の成否は別の証拠が必要です。"
           }
         },
@@ -1500,7 +1548,7 @@
           "order": 5,
           "title": "改変範囲を引き継ぐ",
           "goal": "配布記録とハッシュ不一致を照合し、復旧せず次工程を決める",
-          "context": "ハッシュ不一致、mtime、3候補のファイル一覧がそろいました。配布記録からNS-392と正規経路の対応を確認します。",
+          "context": "これまでの出力と今回の記録を比較します。確認クイズの「前のミッションの証拠」から、調査済みの出力を見返せます。",
           "category": "判断と引継ぎ",
           "command": "grep \"release.bin\" package-record.log",
           "tokens": [
@@ -1527,21 +1575,33 @@
             }
           ],
           "output": "$ grep \"release.bin\" package-record.log\n2026-08-24T00:19:58Z ticket=NS-392 path=/srv/release.bin expected=9f2a1c...7b40 actor=deploy-bot\n2026-08-24T00:20:32Z ticket=NONE path=/srv/release.bin hash=4d88be...21aa actor=unknown",
-          "evidence": "NS-392の正規値は9f2a1c...7b40ですが、00:20:32 UTCにticket=NONE・actor=unknownの値4d88be...21aaが記録されています。改変範囲と未承認記録は確定しますが、復旧は行いません。",
+          "evidence": "NS-392のexpected値は9f2a1c...7b40ですが、00:20:32 UTCにはticket=NONE・actor=unknownで異なる値4d88be...21aaが記録されています。記録上の不一致は確認できますが、変更の承認範囲と実際の主体は台帳との照合が必要です。",
           "handoff": "EP08では、同時刻に監視エージェントが停止していないか、systemctl・journalctl・ps・ssの読み取りで確認します。",
           "quiz": {
-            "question": "m5で確定できる範囲は？",
+            "kind": "decision",
+            "question": "異なるハッシュ値の変更が承認範囲内かを確かめる照合は？",
             "choices": [
-              "攻撃者の身元",
-              "自動復旧の完了",
-              "未承認値と時刻",
-              "秘密鍵の内容"
+              "NS-392の承認済み内容と00:20:32の変更記録",
+              "現在の更新時刻が配布日と同じ日かだけ",
+              "deploy-botという名前が一度でも出るか",
+              "ファイル名release.binが同じかだけ"
             ],
-            "answer": 2,
-            "explain": "ticket=NONE、actor=unknown、mtime=00:20:32とハッシュ差は示せますが、身元や復旧結果はこのログから分かりません。"
+            "answer": 0,
+            "explain": "正規のexpected値と後のhash値が異なり、後の行はticket=NONEです。承認済みの内容・時間・対象と変更記録を比較し、ファイル名や日付だけで正当と扱わないことが必要です。",
+            "sources": [
+              "ep07-m1",
+              "ep07-m2",
+              "ep07-m3",
+              "ep07-m4"
+            ]
           }
         }
-      ]
+      ],
+      "learningIntro": {
+        "title": "sha256sum・stat・find",
+        "body": "ハッシュは内容を比較する指紋です。sha256sumは値の計算・照合、statは時刻などの属性確認、findは条件に合うファイルの探索に使います。",
+        "focus": "内容の一致、更新時刻、変更の承認を別々に確認します。"
+      }
     },
     {
       "id": "ep08",
@@ -1587,9 +1647,9 @@
           "quiz": {
             "question": "statusが直接示す事実は？",
             "choices": [
-              "設定を修正",
-              "原因が攻撃と確定",
-              "再起動が成功",
+              "設定変更の承認がないと確定",
+              "障害原因がchecksumと確定",
+              "現在まで一度も復帰していない",
               "00:20:41にfailed"
             ],
             "answer": 3,
@@ -1633,12 +1693,12 @@
           "quiz": {
             "question": "journalctlで停止直前に出たものは？",
             "choices": [
-              "checksum mismatch",
-              "DNS成功",
-              "認証成功",
-              "復旧完了"
+              "権限不足の記録",
+              "正常終了の記録",
+              "接続タイムアウト",
+              "checksum mismatch"
             ],
-            "answer": 0,
+            "answer": 3,
             "explain": "00:20:41Zにconfig checksum mismatch、その直後にstatus=1/FAILUREが記録されています。"
           }
         },
@@ -1672,12 +1732,12 @@
           "quiz": {
             "question": "psの(no process)が示すことは？",
             "choices": [
-              "agentが稼働中",
-              "agentプロセス不在",
-              "原因が特定済み",
-              "通信が復旧"
+              "サービスが無効化されている",
+              "別時刻も常にプロセス不在",
+              "プロセスが一度も起動していない",
+              "agentプロセス不在"
             ],
-            "answer": 1,
+            "answer": 3,
             "explain": "psにnorthstar-agent processがないため、観測時点でプロセスが残っていないと読めます。"
           }
         },
@@ -1711,10 +1771,10 @@
           "quiz": {
             "question": "ss出力から確認できることは？",
             "choices": [
-              "原因が攻撃確定",
-              "外部接続を実行",
+              "9443への外向き接続がない",
+              "9443がファイアウォールで拒否",
               "9443が待受なし",
-              "秘密鍵を取得"
+              "9443の待受はあるが接続数0"
             ],
             "answer": 2,
             "explain": "192.0.2.1:9443 monitor listenerがないため、監視ポートが待受していないことを確認できます。"
@@ -1725,7 +1785,7 @@
           "order": 5,
           "title": "監視欠落を引き継ぐ",
           "goal": "停止時刻・理由・通信欠落をまとめ、復旧担当への確認事項を決める",
-          "context": "status・journalctl・ps・ssが同じ時間帯の停止を示しました。monitor-gap.logで欠落範囲とチケットを確認して判断します。",
+          "context": "これまでの出力と今回の記録を比較します。確認クイズの「前のミッションの証拠」から、調査済みの出力を見返せます。",
           "category": "判断と引継ぎ",
           "command": "grep \"northstar-agent\" monitor-gap.log",
           "tokens": [
@@ -1755,18 +1815,30 @@
           "evidence": "NS-392の00:20:41Zにheartbeatがmissingとなり、NS-401の00:23:00Zにrestoredです。checksum mismatchとの時間的一致はありますが、因果は追加確認が必要です。",
           "handoff": "EP09では、同じsource=198.51.100.42にAPIの404急増がないか、access.logのpath・request_id・結果を相関します。",
           "quiz": {
-            "question": "m5の妥当な結論は？",
+            "kind": "decision",
+            "question": "heartbeatの欠落と復帰から、復旧報告に書ける範囲は？",
             "choices": [
-              "停止原因は攻撃確定",
-              "外部IPへ接続",
-              "agentを削除",
-              "欠落と復旧時刻を記録"
+              "checksum mismatchが出たので欠落原因は確定",
+              "NS-401があるので復旧操作の承認も確認済み",
+              "00:23にheartbeat復帰したので原因は解消済み",
+              "00:23にheartbeat復帰。継続稼働と原因は追加確認"
             ],
             "answer": 3,
-            "explain": "00:20:41Zのmissingと00:23:00Zのrestored、各ticketは記録できますが、原因の断定や操作は次工程です。"
+            "explain": "restoredは00:23のheartbeat復帰を示します。継続した正常動作、checksum mismatchとの因果、NS-401の承認内容はそれぞれ別の裏付けが必要です。",
+            "sources": [
+              "ep08-m1",
+              "ep08-m2",
+              "ep08-m3",
+              "ep08-m4"
+            ]
           }
         }
-      ]
+      ],
+      "learningIntro": {
+        "title": "systemctl・journalctl・ps・ss",
+        "body": "サービスは継続して動く処理です。systemctlはサービス状態、journalctlはそのログ、psはプロセス、ssはソケットを確認します。",
+        "focus": "状態・停止直前のログ・プロセス・待受という異なる証拠を比較します。"
+      }
     },
     {
       "id": "ep09",
@@ -1812,12 +1884,12 @@
           "quiz": {
             "question": "404抽出だけで言えないことは？",
             "choices": [
-              "侵入成功の有無",
-              "対象path",
               "3件の記録",
-              "送信元IP"
+              "侵入成功の有無",
+              "送信元IP",
+              "対象path"
             ],
-            "answer": 0,
+            "answer": 1,
             "explain": "404行は要求の記録を示しますが、サーバー侵入やデータ取得の成功までは表しません。"
           }
         },
@@ -1858,12 +1930,12 @@
           "quiz": {
             "question": "request_idが役立つ理由は？",
             "choices": [
-              "IPを暗号化",
-              "個別要求を追跡",
-              "404を成功化",
-              "時刻を修正"
+              "要求が承認済みか保証する",
+              "送信元端末の所有者を特定",
+              "同じ人の全要求を必ずまとめる",
+              "個別要求を追跡"
             ],
-            "answer": 1,
+            "answer": 3,
             "explain": "rq-701〜703のようなrequest_idは、各要求をアプリログや監査記録へ追跡する手掛かりです。"
           }
         },
@@ -1904,10 +1976,10 @@
           "quiz": {
             "question": "healthの404から分かることは？",
             "choices": [
-              "必ず探索",
-              "侵入成功",
+              "404なのでパスは過去にも未存在",
+              "healthという名前なので必ず正常",
               "設定不一致もあり得る",
-              "request_id不要"
+              "別送信元の200と同じ要求である"
             ],
             "answer": 2,
             "explain": "/v1/healthは同じログで200もあり、404はAPI仕様や時点の設定不一致の可能性を残します。"
@@ -1978,9 +2050,9 @@
           "quiz": {
             "question": "この集計で各1になる理由は？",
             "choices": [
-              "全件が成功",
-              "sortが通信した",
-              "IPが消えた",
+              "同じpathの行はすべて統合される",
+              "同じIPの行は自動的に1行になる",
+              "日時はuniqの比較から除外される",
               "request_idが各行で異なる"
             ],
             "answer": 3,
@@ -1992,7 +2064,7 @@
           "order": 5,
           "title": "急増の意味を保留する",
           "goal": "集約済みの404結果と通常障害の記録を読み、追加確認を引き継ぐ",
-          "context": "同一IPに3つの異なる404 request_idがありました。集約処理済みのsummaryを読み、意図を断定せず次の確認を決めます。",
+          "context": "これまでの出力と今回の記録を比較します。確認クイズの「前のミッションの証拠」から、調査済みの出力を見返せます。",
           "category": "判断と引継ぎ",
           "command": "head -5 404-summary.log",
           "tokens": [
@@ -2018,22 +2090,34 @@
               "safety": "Northstar Labの模擬集約ファイルです。"
             }
           ],
-          "output": "$ head -5 404-summary.log\n2026-08-24T00:19:54Z source=198.51.100.42 count=3 paths=/v1/health,/v1/admin,/v1/backup\nassessment=exploration-like sequence; no successful privileged response observed\nnormal-check source=203.0.113.55 path=/v1/health status=200\nrequest_ids=rq-701,rq-702,rq-703 ticket=NS-401",
+          "output": "$ head -5 404-summary.log\n2026-08-24T00:19:54Z source=198.51.100.42 count=3 paths=/v1/health,/v1/admin,/v1/backup\nnormal-check source=203.0.113.55 path=/v1/health status=200\nrequest_ids=rq-701,rq-702,rq-703 ticket=NS-401",
           "evidence": "198.51.100.42の3要求は探索に似た順序ですが、成功した特権応答は観測されていません。NS-401、request_id群、通常の200応答をアプリ担当へ渡します。",
           "handoff": "EP10では、NS-401の配布対象northstar.testのTLS証明書を読み、期限切れか差し替えミスかをDNS・配布記録と照合します。",
           "quiz": {
-            "question": "404急増の適切な表現は？",
+            "kind": "decision",
+            "question": "3要求の成否をさらに調べるため、アプリ担当に渡す検索キーは？",
             "choices": [
-              "探索らしいが要照合",
-              "侵入成功と断定",
-              "記録は無価値",
-              "全404を正常扱い"
+              "正常応答した別送信元のIPだけ",
+              "パス名healthだけで送信元と時刻は省く",
+              "全体の404件数だけ",
+              "rq-701〜703と各要求の時刻・送信元"
             ],
-            "answer": 0,
-            "explain": "3件の連続pathは探索らしい一方、privileged response成功はありません。request_idとNS-401を使う追加照合が必要です。"
+            "answer": 3,
+            "explain": "request_idと時刻・送信元を合わせると、対象の要求を後段のログで追跡できます。別送信元の200や集計件数だけでは3要求の成否を判定できません。",
+            "sources": [
+              "ep09-m1",
+              "ep09-m2",
+              "ep09-m3",
+              "ep09-m4"
+            ]
           }
         }
-      ]
+      ],
+      "learningIntro": {
+        "title": "HTTP・request_id",
+        "body": "HTTPステータスは要求への応答結果です。404は見つからないことを示します。request_idは個々の要求を追跡する識別子です。",
+        "focus": "同じIPやパスでも別の要求かもしれません。要求IDと時刻も合わせます。"
+      }
     },
     {
       "id": "ep10",
@@ -2114,12 +2198,12 @@
           "quiz": {
             "question": "notAfterが示すものは？",
             "choices": [
-              "発行者名",
               "有効期限の終点",
-              "秘密鍵の場所",
-              "APIの404数"
+              "証明書の有効期間の開始",
+              "証明書の配布完了時刻",
+              "ファイルの最終更新時刻"
             ],
-            "answer": 1,
+            "answer": 0,
             "explain": "notAfter=Aug 23 23:59:59 2026 GMTは証明書の有効期間の終点で、Aug 24 UTCには期限外です。"
           }
         },
@@ -2160,10 +2244,10 @@
           "quiz": {
             "question": "DNS記録で照合できるものは？",
             "choices": [
-              "秘密鍵の中身",
-              "侵入者の身元",
+              "証明書の署名検証結果",
+              "新証明書の実配布完了",
               "名前とcert_id",
-              "API本文"
+              "TLS接続の成功履歴"
             ],
             "answer": 2,
             "explain": "DNS記録にはname、target、cert_id、ticketがあり、対象名と証明書IDの対応を確認できます。"
@@ -2199,12 +2283,12 @@
           "quiz": {
             "question": "mtimeだけで断定できないことは？",
             "choices": [
-              "更新時刻の手掛かり",
-              "所有者表示",
-              "ファイルサイズ",
-              "内容の正当性"
+              "内容の正当性",
+              "他のログと比較する時刻の候補",
+              "最後に更新された時刻",
+              "記録された更新日の前後関係"
             ],
-            "answer": 3,
+            "answer": 0,
             "explain": "mtimeは00:22:09 UTCという属性を示しますが、更新内容が正しいか、誰が実行したかは別記録が必要です。"
           }
         },
@@ -2245,12 +2329,12 @@
           "quiz": {
             "question": "台帳から最も重要な不一致は？",
             "choices": [
-              "旧版が実配布先へ",
-              "新証明書がstaging向け",
-              "actorがdeploy-bot",
-              "IDが文字列"
+              "DNS名の不一致だけが原因",
+              "新証明書が本番で旧版がstaging",
+              "新旧とも同じ対象へ配布済み",
+              "旧版が実配布先へ"
             ],
-            "answer": 0,
+            "answer": 3,
             "explain": "cert-new-42はstaging向けなのに、実配布先198.51.100.88には期限外cert-old-17がticket=NONEで記録されています。"
           }
         },
@@ -2259,7 +2343,7 @@
           "order": 5,
           "title": "期限外の原因を判定する",
           "goal": "証明書・DNS・配布台帳を総合し、差し替えミスとして引き継ぐ",
-          "context": "期限外の公開証明書、DNSのcert-old-17、staging向けcert-new-42がそろいました。判定メモから、復旧操作をせず次の担当へ事実を渡します。",
+          "context": "これまでの出力と今回の記録を比較します。確認クイズの「前のミッションの証拠」から、調査済みの出力を見返せます。",
           "category": "判断と引継ぎ",
           "command": "grep \"cert-old-17\" cert-review.log",
           "tokens": [
@@ -2285,22 +2369,34 @@
               "safety": "模擬レビュー記録の参照のみです。"
             }
           ],
-          "output": "$ grep \"cert-old-17\" cert-review.log\n2026-08-24T00:23:12Z cert_id=cert-old-17 status=expired dns_match=yes deploy_target_mismatch=yes ticket=NS-401\nassessment=expired certificate served because new cert remained in staging; verify change window before remediation",
+          "output": "$ grep \"cert-old-17\" cert-review.log\n2026-08-24T00:23:12Z cert_id=cert-old-17 status=expired dns_match=yes deploy_target_mismatch=yes ticket=NS-401",
           "evidence": "cert-old-17は期限切れ、DNS対象は一致し、new証明書がstagingに残る配布先ミスが示されています。NS-401の変更窓と承認者を確認してから復旧します。",
           "handoff": "EP10の引継ぎは、秘密鍵操作なしでNS-401の変更窓・配布承認・stagingから本番への経路を確認することです。復旧は承認済み担当に委ねます。",
           "quiz": {
-            "question": "最も妥当な暫定判断は？",
+            "kind": "decision",
+            "question": "期限切れの証明書が配布された経路を調べるとき、優先する比較は？",
             "choices": [
-              "鍵漏えいが確定",
-              "期限外＋配布先ミス",
-              "DNS攻撃が確定",
-              "証明書は有効"
+              "証明書ファイルのmtimeとサイズだけ",
+              "deploy-botという所有者名と発行者名だけ",
+              "DNS名と証明書のsubjectが一致するかだけ",
+              "cert-new-42のstaging記録とcert-old-17の実配布記録"
             ],
-            "answer": 1,
-            "explain": "opensslのnotAfter、DNSのcert-old-17、台帳のstaging/newと実配布/oldの食い違いから、期限外と配布先ミスを暫定判断できます。"
+            "answer": 3,
+            "explain": "新証明書はstaging、旧証明書は実配布先に記録されています。期限・cert_id・targetを合わせて経路を調べます。mtimeや名前一致だけでは配布内容を説明できません。",
+            "sources": [
+              "ep10-m1",
+              "ep10-m2",
+              "ep10-m3",
+              "ep10-m4"
+            ]
           }
         }
-      ]
+      ],
+      "learningIntro": {
+        "title": "TLS証明書・openssl x509",
+        "body": "証明書には対象名、発行者、有効期間などが入っています。openssl x509は保存された証明書の情報を確認する道具です。",
+        "focus": "notBeforeは期間の開始、notAfterは終点です。ファイルの更新時刻とは区別します。"
+      }
     },
     {
       "id": "ep11",
@@ -2339,12 +2435,12 @@
           "quiz": {
             "question": "catで最初に確認できるものは？",
             "choices": [
-              "添付の実行結果",
-              "送信者の実在性",
-              "メール本文の安全性",
-              "保存済みヘッダー全体"
+              "配送先端末での開封記録",
+              "送信者の本人確認結果",
+              "保存済みヘッダー全体",
+              "メール本文と添付の全内容"
             ],
-            "answer": 3,
+            "answer": 2,
             "explain": "catは保存済みmail-header.txtの文字列を表示しますが、送信者の実在性や添付の安全性までは断定しません。"
           }
         },
@@ -2392,12 +2488,12 @@
           "quiz": {
             "question": "この抽出から断定できる事実は？",
             "choices": [
-              "送信者の本人確認済み",
-              "添付が安全",
-              "配送が拒否された",
-              "From/Return-Path差異"
+              "差異だけで送信者の詐称が確定",
+              "From/Return-Path差異",
+              "Fromの値が配送時の送信元と同じ",
+              "差異があれば必ず配送は拒否"
             ],
-            "answer": 3,
+            "answer": 1,
             "explain": "抽出行では二つのドメインが異なりますが、その差だけで送信者の意図や添付の安全性は断定できません。"
           }
         },
@@ -2445,10 +2541,10 @@
           "quiz": {
             "question": "Authentication-Resultsから読める結果は？",
             "choices": [
-              "spf=pass dkim=pass",
-              "IPが実在と証明",
+              "spf=fail dkim=pass",
+              "spf=none dkim=fail",
               "spf=fail dkim=none",
-              "添付が開封済み"
+              "spf=pass dkim=none"
             ],
             "answer": 2,
             "explain": "保存ヘッダーはspf=failとdkim=noneを示します。これは認証結果であり、実在人物や侵害成功を保証しません。"
@@ -2491,12 +2587,12 @@
           "quiz": {
             "question": "Message-IDを記録する主な理由は？",
             "choices": [
-              "メールを再送するため",
-              "本文を実行するため",
-              "IPを変更するため",
-              "一通の証拠を識別するため"
+              "添付内容が一致するかの検証",
+              "一通の証拠を識別するため",
+              "送信者本人であることの証明",
+              "配送が成功したことの保証"
             ],
-            "answer": 3,
+            "answer": 1,
             "explain": "Message-IDはヘッダー記録を一通の識別子に結び付ける材料で、再送や本文の安全性を意味しません。"
           }
         },
@@ -2505,7 +2601,7 @@
           "order": 5,
           "title": "添付ハッシュを照合する",
           "goal": "添付を開かず、既知ハッシュリストとの一致結果を確認する",
-          "context": "ヘッダーのMessage-IDとticket=NS-401を固定しました。添付invoice-407.pdfは開かず、保存済みハッシュだけを照合します。",
+          "context": "これまでの出力と今回の記録を比較します。確認クイズの「前のミッションの証拠」から、調査済みの出力を見返せます。",
           "category": "メール監査",
           "command": "sha256sum -c known-hashes.txt",
           "tokens": [
@@ -2535,18 +2631,30 @@
           "evidence": "invoice-407.pdfの計算値は既知リストと一致しません。添付は開いていないため、内容やマルウェア性は断定できません。",
           "handoff": "EP12では、Message-IDとticket=NS-401を手掛かりに、架空クラウド監査ログのactor・MFA・requestIdを相関します。",
           "quiz": {
-            "question": "FAILEDの結果から適切な判断は？",
+            "kind": "decision",
+            "question": "FAILEDを受けて、添付の検証記録に残すべき判断は？",
             "choices": [
-              "添付を開いて確認する",
-              "送信者の侵害を断定する",
-              "ハッシュ不一致を記録し隔離判断へ",
-              "既知リストを削除する"
+              "不一致なので添付はマルウェアと確定する",
+              "基準と不一致。既知リストの版・入手元も検証する",
+              "PDF拡張子なので内容検証は不要とする",
+              "ヘッダーの差異が原因でハッシュも変わったとする"
             ],
-            "answer": 2,
-            "explain": "ハッシュ不一致は重要な観測事実ですが、添付を開かず内容や原因を断定せず、隔離や追加確認を判断します。"
+            "answer": 1,
+            "explain": "FAILEDは基準値との不一致です。添付の変更だけでなく基準リストの誤りや版違いも検討し、未開封の内容や悪性を断定せず、入手元と比較対象を確認します。",
+            "sources": [
+              "ep11-m1",
+              "ep11-m2",
+              "ep11-m3",
+              "ep11-m4"
+            ]
           }
         }
-      ]
+      ],
+      "learningIntro": {
+        "title": "メールヘッダー・grep -E",
+        "body": "ヘッダーは配送や認証に関する記録です。Fromは表示上の差出人、Return-Pathは配送時の返信先に関する欄です。grep -Eで必要な見出しを抽出します。",
+        "focus": "SPFとDKIMの結果は認証の手掛かりです。ヘッダーだけで添付の内容までは判断できません。"
+      }
     },
     {
       "id": "ep12",
@@ -2599,12 +2707,12 @@
           "quiz": {
             "question": "m1の出力で確認できる組合せは？",
             "choices": [
-              "秘密鍵の内容",
-              "実クラウド名",
-              "操作の再実行結果",
-              "actorとMFA/readの結果"
+              "認証がreadを許可した因果関係",
+              "全期間のmayaの操作履歴",
+              "actorとMFA/readの結果",
+              "actorの実際の操作者の身元"
             ],
-            "answer": 3,
+            "answer": 2,
             "explain": "抽出結果にはactor、sourceIp、action、result、requestIdがありますが、秘密情報や実クラウド操作は含まれません。"
           }
         },
@@ -2652,12 +2760,12 @@
           "quiz": {
             "question": "MFA行を分ける利点は？",
             "choices": [
-              "ログを消せる",
-              "認証判定と操作を分けて比較できる",
-              "権限を付与できる",
-              "外部IPを調べられる"
+              "MFA以外の操作が存在しないと証明",
+              "認証と操作の順序が自動的に確定",
+              "MFAの成功がすべてのreadを承認",
+              "認証判定と操作を分けて比較できる"
             ],
-            "answer": 1,
+            "answer": 3,
             "explain": "MFAイベントを分離すると、認証判定と後続操作を時刻・requestIdで比較できます。"
           }
         },
@@ -2719,12 +2827,12 @@
           "quiz": {
             "question": "TSV化で保持される重要列は？",
             "choices": [
-              "秘密トークン",
-              "実クラウドのURL",
-              "添付本文",
-              "actor・IP・結果・reqId"
+              "actor・IP・結果・reqId",
+              "時刻・action・resource・result",
+              "actor・MFA方式・権限・承認者",
+              "actor・時刻・action・resource"
             ],
-            "answer": 3,
+            "answer": 0,
             "explain": "指定配列はactor、sourceIp、result、requestIdを保持します。時刻やactionなどは別の抽出結果で照合します。"
           }
         },
@@ -2772,10 +2880,10 @@
           "quiz": {
             "question": "requestIdが異なることの意味は？",
             "choices": [
-              "必ず同一操作",
-              "必ず攻撃成功",
+              "時刻が近ければ同一要求となる",
+              "異なるIDなので主体も必ず異なる",
               "同一要求とは断定できない",
-              "ログが無効"
+              "actorが同じなら同一要求となる"
             ],
             "answer": 2,
             "explain": "requestIdが異なるため、MFA failとread successを同じ要求として扱えません。関連の可能性は時刻や他証拠で追加確認します。"
@@ -2786,7 +2894,7 @@
           "order": 5,
           "title": "最終イベント列を整形する",
           "goal": "最終イベント列を整形し、観測と未確定を分けて引き継ぐ",
-          "context": "MFA・readの時刻、actor=maya、sourceIp=203.0.113.17、requestId=req-1201〜1203を確認しました。最後にactorのイベント列を整形して判断を引き継ぎます。",
+          "context": "これまでの出力と今回の記録を比較します。確認クイズの「前のミッションの証拠」から、調査済みの出力を見返せます。",
           "category": "クラウド監査",
           "command": "jq -r 'select(.actor==\"maya\") | [.timestamp,.action,.result,.requestId] | @tsv' cloud-audit.jsonl",
           "tokens": [
@@ -2851,18 +2959,30 @@
           "evidence": "最終イベント列にはMFA fail後のread success、その後のMFA success、各requestIdがあります。req-1202は次工程のticket=NS-411対応表へ引き継ぎますが、read成功の認証経路や意図は確定しません。",
           "handoff": "EP13では、同じ時刻軸とticket相関の考え方で、lab namespaceのコンテナ再起動と設定変更記録を確認します。",
           "quiz": {
-            "question": "整形後の最終判断として適切なのは？",
+            "kind": "decision",
+            "question": "read成功の認証経路を調べるには、どの記録を優先しますか？",
             "choices": [
-              "侵害成功を断定",
-              "MFAを無効化",
-              "actorを削除",
-              "観測と未確定を分け追加相関"
+              "後のreq-1203の成功だけでreadを承認済みとする",
+              "req-1202に対応するセッション・認証の対応記録",
+              "時刻が直前のreq-1201を同じ認証として扱う",
+              "同じactorの件数だけで認証経路を決める"
             ],
-            "answer": 3,
-            "explain": "成功・失敗とrequestIdは記録できますが、因果や意図は未確定なので、追加監査キーを引き継ぎます。"
+            "answer": 1,
+            "explain": "read成功はreq-1202です。前後のMFAは別requestIdなので、時間が近いだけでは対応しません。req-1202に結び付くセッションと認証の記録を確認します。",
+            "sources": [
+              "ep12-m1",
+              "ep12-m2",
+              "ep12-m3",
+              "ep12-m4"
+            ]
           }
         }
-      ]
+      ],
+      "learningIntro": {
+        "title": "JSON・jq",
+        "body": "JSONは名前と値の組合せでデータを表します。JSONLは1行に1つのJSONを置く形式です。jqの.actorはactor欄を参照し、select(...)は条件に合う記録を選びます。",
+        "focus": "actorは主体、requestIdは要求の識別子です。MFAの判定とreadの結果を別の記録として比較します。"
+      }
     },
     {
       "id": "ep13",
@@ -2922,9 +3042,9 @@
           "quiz": {
             "question": "RESTARTS=5から分かることは？",
             "choices": [
-              "原因が侵入と確定",
-              "イメージ改ざん確定",
-              "設定変更者が判明",
+              "5分間ずっと停止していた",
+              "5つのPodが再作成された",
+              "5回すべてが同じ原因と確定",
               "5回の再起動記録"
             ],
             "answer": 3,
@@ -2989,12 +3109,12 @@
           "quiz": {
             "question": "describeで直接確認できるものは？",
             "choices": [
-              "コンテナ内での操作",
+              "SAの実際の操作履歴を確認",
+              "イメージ内容の安全性を検証",
               "digestとSAを確認",
-              "設定の書き換え",
-              "Pod削除の結果"
+              "設定変更の承認者を確定"
             ],
-            "answer": 1,
+            "answer": 2,
             "explain": "describe出力にはimage digestとservice accountがあり、読み取りだけで確認できます。"
           }
         },
@@ -3056,12 +3176,12 @@
           "quiz": {
             "question": "ログだけで断定できないことは？",
             "choices": [
-              "request_idの値",
+              "ticketの記録",
               "errorの時刻",
-              "read成功が再起動原因",
-              "ticketの記録"
+              "request_idの値",
+              "read成功が再起動原因"
             ],
-            "answer": 2,
+            "answer": 3,
             "explain": "read successと後続errorは観測できますが、因果関係はイベントや変更履歴を追加確認しないと断定できません。"
           }
         },
@@ -3124,9 +3244,9 @@
             "question": "eventsの時系列から言えることは？",
             "choices": [
               "ConfigMap更新が先",
-              "侵入が確定",
-              "image digestが変更された",
-              "actorの意図が判明"
+              "ConfigMap更新が原因と確定",
+              "BackOffの後に設定更新された",
+              "Pulledなのでdigestも変わった"
             ],
             "answer": 0,
             "explain": "10:10:58のConfigMapUpdatedは10:11:42のBackOffより前です。原因や意図は追加証拠が必要です。"
@@ -3137,7 +3257,7 @@
           "order": 5,
           "title": "再起動の判断を引き継ぐ",
           "goal": "観測事実と未確定事項を分け、設定変更ticketとdigestを引き継ぐ",
-          "context": "再起動5回、10:10:58ZのConfigMap更新、10:11:42ZのBackOff、digest unchanged、service account=api-readerを確認しました。",
+          "context": "これまでの出力と今回の記録を比較します。確認クイズの「前のミッションの証拠」から、調査済みの出力を見返せます。",
           "category": "コンテナ監査",
           "command": "kubectl get pod api-7f9c -n lab -o wide",
           "tokens": [
@@ -3202,18 +3322,30 @@
           "evidence": "api-7f9cは192.0.2.44上で5回再起動しています。設定変更ticket=NS-411とdigest unchangedは関連材料ですが、侵害や原因の断定には不足します。",
           "handoff": "EP14では、同じようにactor・ticket・digestを、git履歴とbuild metadataの署名有無へ引き継ぎます。",
           "quiz": {
-            "question": "安全な最終判断は？",
+            "kind": "decision",
+            "question": "設定変更と再起動の関係を調べるため、次に比較する材料は？",
             "choices": [
-              "直ちにdeleteする",
-              "再起動とticketを追加確認",
-              "execで原因を探す",
-              "imageを置き換える"
+              "RESTARTSの回数とPodのAGEだけ",
+              "PodのIPとNODE名だけ",
+              "digestが同じなので設定も同じと判断する",
+              "NS-411の設定差分と変更前後のhealthログ"
             ],
-            "answer": 1,
-            "explain": "指定範囲は読み取り監査なので、観測事実を記録し、変更や封じ込めは権限者へ判断依頼します。"
+            "answer": 3,
+            "explain": "ConfigMap更新の後にconfig-mismatchとBackOffがあります。これは原因候補を絞る材料で、確定ではありません。NS-411の設定差分と前後のログを比較します。イメージ一致は設定一致を保証しません。",
+            "sources": [
+              "ep13-m1",
+              "ep13-m2",
+              "ep13-m3",
+              "ep13-m4"
+            ]
           }
         }
-      ]
+      ],
+      "learningIntro": {
+        "title": "Kubernetes・kubectl",
+        "body": "Podはコンテナを実行する単位です。kubectlはKubernetesの情報を扱う道具で、-n labは調べるnamespaceを限定します。getは一覧、describeは詳細、logsはログです。",
+        "focus": "RESTARTSは再起動回数、digestはイメージを識別する値です。イメージとConfigMapの設定変更を分けて読みます。"
+      }
     },
     {
       "id": "ep14",
@@ -3264,15 +3396,15 @@
           "evidence": "Author=ci-builderとAuthorDate=2026-08-24T11:20:00ZをGit metadataで確認しました。これはcommitのAuthor情報であり、実行actorや成果物digestはこのlogだけでは不明です。",
           "handoff": "次はa1b2c3dの変更概要をgit showで読み、artifact生成に関係するファイルを絞ります。",
           "quiz": {
-            "question": "git log --format=fuller -3で分かることは？",
+            "question": "このgit logの出力で直接確認できる情報は？",
             "choices": [
-              "直近3件のcommit概要",
-              "artifactの安全性",
-              "署名の秘密鍵",
-              "CIの実行権限"
+              "必ず3件の履歴が存在する",
+              "成果物の署名検証結果",
+              "表示されたcommitの作者・時刻・件名",
+              "実際に配布された全ファイル"
             ],
-            "answer": 0,
-            "explain": "fuller形式で直近3件のcommit概要とAuthor・AuthorDateを表示しますが、実行actorや成果物の安全性は示しません。"
+            "answer": 2,
+            "explain": "表示された履歴の作者・時刻・件名を確認できます。-3は最大件数の指定であり、この教材出力は2件です。成果物や署名の検証とは別です。"
           }
         },
         {
@@ -3326,12 +3458,12 @@
           "quiz": {
             "question": "git show --statの役割は？",
             "choices": [
-              "commitを削除",
+              "変更行の全文を表示する",
+              "commit署名の信頼性を保証",
               "変更対象の概要を読む",
-              "成果物を署名",
-              "CIを再実行"
+              "生成された成果物のハッシュ検証"
             ],
-            "answer": 1,
+            "answer": 2,
             "explain": "--statは指定commitの変更ファイルと行数を表示するだけで、署名や再実行はしません。"
           }
         },
@@ -3372,12 +3504,12 @@
           "quiz": {
             "question": "sha256sumの結果として正しい読み方は？",
             "choices": [
-              "tarは一致、attは不一致",
-              "両方とも署名済み",
-              "CI侵害が確定",
-              "全artifactを削除"
+              "両方のファイルが基準と一致",
+              "att不一致なのでtarも不一致",
+              "tarは不一致、attは一致",
+              "tarは一致、attは不一致"
             ],
-            "answer": 0,
+            "answer": 3,
             "explain": "出力はtar=OK、att=FAILEDを示します。署名・原因・侵害までは別の証拠が必要です。"
           }
         },
@@ -3439,13 +3571,13 @@
           "quiz": {
             "question": "metadataの4列が結ぶものは？",
             "choices": [
-              "4列を対応付け",
-              "ユーザー・パスワード・鍵・IP",
-              "Pod等の別情報",
-              "メール・添付・本文・URL"
+              "actor・時刻・署名者・承認者",
+              "成果物・サイズ・配布先・配布時刻",
+              "actor・commit・artifact・digest",
+              "commit・親commit・branch・tag"
             ],
-            "answer": 0,
-            "explain": "指定した4列はCI actor、元commit、artifact名、digestを対応付けます。"
+            "answer": 2,
+            "explain": "抽出式に並ぶ4項目がTSVの4列になります。誰のどのcommitにどの成果物とdigestが対応するかを照合できますが、署名や承認までは証明しません。"
           }
         },
         {
@@ -3453,7 +3585,7 @@
           "order": 5,
           "title": "署名欠落の判断を引き継ぐ",
           "goal": "署名を確認できないこととハッシュ不一致を分け、改ざんを断定せず報告する",
-          "context": "commit=a1b2c3d、actor=ci-builder、artifact=api-2.4.1.att、digest=sha256:aaaa…8888、sha256sum=FAILEDを確認しました。",
+          "context": "これまでの出力と今回の記録を比較します。確認クイズの「前のミッションの証拠」から、調査済みの出力を見返せます。",
           "category": "ビルド監査",
           "command": "git show --show-signature --format=fuller --no-patch a1b2c3d",
           "tokens": [
@@ -3504,18 +3636,30 @@
           "evidence": "show-signatureの結果はno signature foundで、commitとactor・時刻はmetadataと整合します。attのハッシュ不一致と合わせても、改ざん者や原因は証拠範囲外です。",
           "handoff": "EP15では、署名欠落を手掛かりに自動起動設定の痕跡を読み取り、作成・有効化・隠蔽はせず判断だけを引き継ぎます。",
           "quiz": {
-            "question": "署名を確認できない場合の適切な結論は？",
+            "kind": "decision",
+            "question": "署名とハッシュの検証結果を、正しく分けた報告は？",
             "choices": [
-              "改ざんを断定",
-              "証拠不足として署名検証を追加依頼",
-              "成果物を実行",
-              "履歴を削除"
+              "tarは基準一致、attは不一致、commit署名は確認できず",
+              "actorが一致したためattの不一致は問題なし",
+              "tarが一致したためattとcommitも検証済み",
+              "署名がないためtarの内容も不一致"
             ],
-            "answer": 1,
-            "explain": "no signature foundとハッシュ不一致は報告材料ですが、改ざんの原因や実行結果は追加証拠が必要です。"
+            "answer": 0,
+            "explain": "tarのハッシュ一致、attのハッシュ不一致、commitで署名を確認できないことは別々の検証結果です。ひとつの一致を他の成果物や署名の保証に広げないでください。",
+            "sources": [
+              "ep14-m1",
+              "ep14-m2",
+              "ep14-m3",
+              "ep14-m4"
+            ]
           }
         }
-      ]
+      ],
+      "learningIntro": {
+        "title": "Git・成果物・署名",
+        "body": "commitは変更履歴の単位、artifactはビルドされた成果物です。git logは履歴、git showは指定した変更を確認します。digestは内容の照合に使います。",
+        "focus": "commitの署名確認と成果物のハッシュ照合は別の検証です。どの対象について何を確認したか整理します。"
+      }
     },
     {
       "id": "ep15",
@@ -3561,12 +3705,12 @@
           "quiz": {
             "question": "list-unit-filesで分かることは？",
             "choices": [
+              "timerの最終発火時刻",
+              "unitの作成を承認した人",
               "サービスの有効状態",
-              "作成者の意図",
-              "実行内容の安全性",
-              "封じ込め完了"
+              "現在稼働しているプロセス数"
             ],
-            "answer": 0,
+            "answer": 2,
             "explain": "一覧はユニット名とSTATEを示しますが、正当性や意図、封じ込めまでは示しません。"
           }
         },
@@ -3667,12 +3811,12 @@
           "quiz": {
             "question": "sha256sumの目的は？",
             "choices": [
-              "サービスを起動",
               "2つのハッシュを記録",
-              "権限を付与",
-              "設定を隠す"
+              "unitの署名者を特定する",
+              "ファイルの変更時刻を比較",
+              "サービスの実行状態を確認"
             ],
-            "answer": 1,
+            "answer": 0,
             "explain": "sha256sumはserviceとtimerの内容識別子を表示し、設定を実行せず比較材料を作ります。"
           }
         },
@@ -3720,12 +3864,12 @@
           "quiz": {
             "question": "audit.logから確認できる事実は？",
             "choices": [
+              "変更後の処理が正常終了と確定",
               "mayaの変更成功記録",
-              "変更が必ず悪性",
-              "承認者の意図",
-              "侵害が完了"
+              "記録された変更が承認済みと確定",
+              "maya本人が操作したと確定"
             ],
-            "answer": 0,
+            "answer": 1,
             "explain": "ログにはactor=mayaのwrite/enable成功、時刻、ticket=NS-411がありますが、悪性や意図は断定できません。"
           }
         },
@@ -3734,7 +3878,7 @@
           "order": 5,
           "title": "自動起動痕跡を判断する",
           "goal": "観測事実と未確定事項を分け、封じ込めを実行せず判断を引き継ぐ",
-          "context": "telemetry-syncの新しいmtime・hash、actor=maya、write/enable成功、ticket=NS-411を確認しました。最後に一覧を再読し、判断材料をまとめます。",
+          "context": "これまでの出力と今回の記録を比較します。確認クイズの「前のミッションの証拠」から、調査済みの出力を見返せます。",
           "category": "自動起動監査",
           "command": "systemctl list-unit-files telemetry-sync.service telemetry-sync.timer",
           "tokens": [
@@ -3771,18 +3915,30 @@
           "evidence": "serviceとtimerはいずれもenabledです。新規ファイル、hash、actor、ticket、enable結果は観測済みですが、悪性・承認逸脱・実害は断定不能です。",
           "handoff": "EP16では、ticket=NS-411とactor=mayaの監査記録をWindows Securityイベントの主体・時刻と照合します。封じ込めは承認後に判断します。",
           "quiz": {
-            "question": "この段階の安全な対応は？",
+            "kind": "decision",
+            "question": "enabledの2行に加え、実際の起動状況を確認する材料は？",
             "choices": [
-              "disableを実行",
-              "serviceを削除",
-              "証拠を保全し権限者へ判断依頼",
-              "ログを隠す"
+              "unitファイル名が2つあることだけ",
+              "serviceの状態とtimerの発火・実行ログ",
+              "enabledなので現在も実行中と判断する",
+              "enableしたactorの名前だけ"
             ],
-            "answer": 2,
-            "explain": "本教材は防御監査なので、設定を変えず証拠を保全し、承認確認と封じ込め可否を権限者へ引き継ぎます。"
+            "answer": 1,
+            "explain": "enabledは起動の設定状態です。現在稼働中か、timerがいつ発火し何を実行したかは、service状態と実行ログで別に確認します。",
+            "sources": [
+              "ep15-m1",
+              "ep15-m2",
+              "ep15-m3",
+              "ep15-m4"
+            ]
           }
         }
-      ]
+      ],
+      "learningIntro": {
+        "title": "systemd・service・timer",
+        "body": "unitはsystemdが管理する設定の単位です。serviceは処理、timerは起動のタイミングを定義します。enabledは起動の設定状態を示します。",
+        "focus": "有効化の設定と、現在の稼働・実行履歴は別です。設定ファイルとログを照合します。"
+      }
     },
     {
       "id": "ep16",
@@ -3842,13 +3998,13 @@
           "quiz": {
             "question": "MaxEvents 20の意味は？",
             "choices": [
-              "20件を削除する",
-              "直近20件だけ読む",
-              "20分間監視する",
-              "20ユーザーを作る"
+              "ユーザー20人分の履歴を読む",
+              "新しい順に最大20件読む",
+              "直近20分のイベントを読む",
+              "必ず20件の失敗を取得する"
             ],
             "answer": 1,
-            "explain": "-MaxEvents 20は取得件数の上限です。ログの削除や監視の開始は行いません。"
+            "explain": "MaxEvents 20は取得件数の上限です。表示例は3件で、20分の範囲や全履歴を意味しません。"
           }
         },
         {
@@ -3923,12 +4079,12 @@
           "quiz": {
             "question": "4625の抽出結果から確実に言えることは？",
             "choices": [
-              "ログオンが成功した",
+              "同じIPだからパスワードも同じ",
+              "svc-reportの利用者が2人いる",
               "svc-reportの失敗が2件",
-              "資格情報が判明した",
-              "端末隔離が完了した"
+              "この2件で失敗の全履歴がそろう"
             ],
-            "answer": 1,
+            "answer": 2,
             "explain": "4625は失敗ログオンなので、svc-reportに2件の失敗記録があるとだけ言えます。成功や資格情報は示しません。"
           }
         },
@@ -4025,12 +4181,12 @@
           "quiz": {
             "question": "Select-Objectの役割は？",
             "choices": [
-              "イベントを削除する",
-              "選んだ列だけ表示する",
-              "権限を付与する",
-              "時刻を改ざんする"
+              "条件に合う行だけを選ぶ",
+              "イベントの時刻順を変更する",
+              "選んだ列で件数を集計する",
+              "選んだ列だけ表示する"
             ],
-            "answer": 1,
+            "answer": 3,
             "explain": "Select-ObjectはTimeCreatedなど指定したプロパティだけを表示し、証拠を比較しやすくします。"
           }
         },
@@ -4121,9 +4277,9 @@
             "question": "Account別集計で注意すべきことは？",
             "choices": [
               "件数だけで侵害確定しない",
-              "SYSTEMを削除する",
-              "全件を成功とみなす",
-              "送信元を外部接続する"
+              "4672の件数がログオン失敗数",
+              "同じAccountの行は同一セッション",
+              "件数の多いSYSTEMが必ず不正"
             ],
             "answer": 0,
             "explain": "集計は頻度の手掛かりです。4672の件数だけで権限悪用や侵害を断定せず、他ログと相関します。"
@@ -4134,7 +4290,7 @@
           "order": 5,
           "title": "認証連鎖を報告する",
           "goal": "4625・4624・4672を時刻と主体で相関し、証拠の限界と次工程を報告する",
-          "context": "失敗2件、成功1件、4672の集計がそろいました。最後に、相関できる事実と未確認の仮説を分け、可用性を損なわない次工程を決めます。",
+          "context": "これまでの出力と今回の記録を比較します。確認クイズの「前のミッションの証拠」から、調査済みの出力を見返せます。",
           "category": "Windows認証監査",
           "command": "Import-Csv security-events.csv | Group-Object EventId",
           "tokens": [
@@ -4174,22 +4330,34 @@
               "safety": "列指定だけで外部操作はありません。"
             }
           ],
-          "output": "PS> Import-Csv security-events.csv | Group-Object EventId\nCount Name\n----- ----\n2     4625\n1     4624\n1     4672\nAssessment: confirmed=correlated events; suspected=unauthorized use; limit=no process or ticket proof.",
-          "evidence": "同一主体・送信元で4625の後に4624、近接して4672が観測されました。confirmedはログ相関まで、suspectedは不正利用の可能性に留め、プロセスやチケットの裏付けは未取得です。",
+          "output": "PS> Import-Csv security-events.csv | Group-Object EventId\nCount Name\n----- ----\n2     4625\n1     4624\n4     4672",
+          "evidence": "件数表では4625が2件、4624が1件、4672が4件です。前のAccount別集計では4672の内訳はsvc-reportが1件、SYSTEMが3件でした。近い時刻の記録を同一セッションと判断するには、ログオン識別子・プロセス・承認チケットの裏付けが必要です。",
           "handoff": "EP17ではauth・web・cloudの異種ログをUTCへ正規化し、requestIdで相関して時刻ずれの影響を確認します。可用性を守るため端末隔離は影響評価と承認後に行います。",
           "quiz": {
-            "question": "この連鎖の最終判断として適切なのは？",
+            "kind": "decision",
+            "question": "不正なログオンだったかを調べるため、件数表に追加する照合は？",
             "choices": [
-              "侵害成功を即断する",
-              "ログを根拠に全端末停止",
-              "相関事実と仮説を分離する",
-              "資格情報を回収する"
+              "4672があるので不正利用と判断する",
+              "ログオン識別子・プロセス記録と承認チケット",
+              "4625の件数が4624より多いことだけ",
+              "4624があるので正当な業務と判断する"
             ],
-            "answer": 2,
-            "explain": "3種類のイベントは追加調査の根拠ですが、プロセスや変更チケットがなく侵害成功は未確定です。"
+            "answer": 1,
+            "explain": "失敗・成功・特権付与の件数だけでは、同一セッションの連鎖や業務承認を証明できません。ログオン識別子を用いてプロセス記録と承認範囲を比較します。",
+            "sources": [
+              "ep16-m1",
+              "ep16-m2",
+              "ep16-m3",
+              "ep16-m4"
+            ]
           }
         }
-      ]
+      ],
+      "learningIntro": {
+        "title": "PowerShell・Windowsイベント",
+        "body": "Get-WinEventはイベントを取得します。Where-Objectは条件で絞り、Select-Objectは項目を選び、Group-Objectは同じ値をまとめます。パイプはオブジェクトを次の処理へ渡します。",
+        "focus": "4625はログオン失敗、4624は成功、4672は新しいログオンへの特権付与です。イベントID・主体・時刻を比較します。"
+      }
     },
     {
       "id": "ep17",
@@ -4242,10 +4410,10 @@
           "quiz": {
             "question": "-uを付ける目的は？",
             "choices": [
-              "行を削除する",
+              "元ログの時刻をUTCで上書き",
               "UTC表示にそろえる",
-              "JSONを暗号化する",
-              "Webへ接続する"
+              "端末の時計設定を変更する",
+              "元ログの時計誤差を除く"
             ],
             "answer": 1,
             "explain": "-uは表示基準をUTCにします。時計設定やログの削除は行いません。"
@@ -4295,12 +4463,12 @@
           "quiz": {
             "question": "jqの-rが役立つ理由は？",
             "choices": [
+              "JSONキー名もすべて残す",
               "引用符なしの列にする",
-              "JSONを削除する",
-              "時刻を現地化する",
-              "認証を再実行する"
+              "文字列を数値として並べ替える",
+              "時刻のタイムゾーンを変換する"
             ],
-            "answer": 0,
+            "answer": 1,
             "explain": "-rは文字列を引用符なしで出力するため、後段のsortやjoinで扱いやすくなります。"
           }
         },
@@ -4362,12 +4530,12 @@
           "quiz": {
             "question": "sortを入れる効果は？",
             "choices": [
-              "ログを暗号化する",
               "行の比較順を安定させる",
-              "通信を遮断する",
-              "時刻を自動補正する"
+              "欠けた要求を補って並べる",
+              "すべての時計差を補正する",
+              "同じIPの行を自動的に統合する"
             ],
-            "answer": 1,
+            "answer": 0,
             "explain": "sortは行の順序を整えるだけで、時計ずれを自動補正したり通信を遮断したりはしません。"
           }
         },
@@ -4436,12 +4604,12 @@
           "quiz": {
             "question": "joinの共通キーは？",
             "choices": [
-              "ファイルサイズ",
-              "requestId",
-              "端末の壁紙",
-              "DNSのTTL"
+              "timestampの完全一致",
+              "userの名前",
+              "sourceのIPアドレス",
+              "requestId"
             ],
-            "answer": 1,
+            "answer": 3,
             "explain": "joinは両方の1列目requestIdが一致する行を結合しています。共通キーがあっても因果は自動確定しません。"
           }
         },
@@ -4450,7 +4618,7 @@
           "order": 5,
           "title": "三系統の限界を報告する",
           "goal": "cloudを含む時系列の一致と未確定事項を分けて報告する",
-          "context": "authとwebはrequestIdで結合できました。最後にcloud相関表を読み、各ログの時刻差を因果と取り違えない報告へまとめます。",
+          "context": "これまでの出力と今回の記録を比較します。確認クイズの「前のミッションの証拠」から、調査済みの出力を見返せます。",
           "category": "異種ログ相関",
           "command": "awk '{print $1,$2,$3,$4}' correlated.log",
           "tokens": [
@@ -4476,22 +4644,34 @@
               "safety": "Northstar Labの模擬証拠だけを読みます。"
             }
           ],
-          "output": "$ awk '{print $1,$2,$3,$4}' correlated.log\nreq-7f21 203.0.113.52 maya 2026-08-24T00:03:11Z/auth\nreq-7f21 203.0.113.52 maya 2026-08-24T00:03:16Z/web\nreq-7f21 203.0.113.52 maya 2026-08-24T00:03:19Z/cloud",
-          "evidence": "req-7f21はauth→web→cloudの順に各5秒・3秒間隔で観測されますが、各ログの時計差や欠落はこの表だけでは算出できません。順序だけで因果を断定できず、異種ログの一致事実とfalse positive可能性を併記します。",
+          "output": "$ awk '{print $1,$2,$3,$4}' correlated.log\nreq-7f21 203.0.113.52 maya 2026-08-24T00:03:11Z/auth\nreq-7f21 203.0.113.52 maya 2026-08-24T00:03:14Z/web\nreq-7f21 203.0.113.52 maya 2026-08-24T00:03:19Z/cloud",
+          "evidence": "req-7f21はauth→web→cloudの順に各3秒・5秒間隔で観測されますが、各ログの時計差や欠落はこの表だけでは算出できません。順序だけで因果を断定できず、異種ログの一致事実とfalse positive可能性を併記します。",
           "handoff": "EP18ではalerts.jsonlとallowlist/change-ticketを比較し、相関したアラートを抑制する条件を検討します。ルール変更は実行せず、可用性と見逃しのトレードオフを記録します。",
           "quiz": {
-            "question": "三系統の順序から言えることは？",
+            "kind": "decision",
+            "question": "この3行から報告できることと、追加確認が必要なことの組合せは？",
             "choices": [
-              "cloudが原因と確定",
-              "順序は観測、因果は未確定",
-              "全アラートを抑制",
-              "ログを削除して再収集"
+              "同じIPなので3行は必ず同一人物の操作",
+              "3行そろったので途中のログ欠落もない",
+              "UTCなのでauthが後続処理の原因と確定",
+              "識別子は一致。厳密な順序には各時計差の確認が必要"
             ],
-            "answer": 1,
-            "explain": "auth・web・cloudの順序は観測事実ですが、時計差や欠落を確認できないため因果は未確定です。"
+            "answer": 3,
+            "explain": "req-7f21・送信元・userの一致は読めますが、UTC表記だけで時計精度は保証されません。因果や欠落まで断定せず、各ログの時計差と記録範囲を確認します。",
+            "sources": [
+              "ep17-m1",
+              "ep17-m2",
+              "ep17-m3",
+              "ep17-m4"
+            ]
           }
         }
-      ]
+      ],
+      "learningIntro": {
+        "title": "jq・sort・join",
+        "body": "異なるログを比較するため、必要な列を取り出し、共通キー順に並べます。joinは同じキーを持つ行を結び付けます。今回は両ファイルの1列目を使います。",
+        "focus": "共通キーはrequestIdです。結合できたことと、時計の精度や因果関係の確認は別です。"
+      }
     },
     {
       "id": "ep18",
@@ -4537,12 +4717,12 @@
           "quiz": {
             "question": "severity=highが意味しないことは？",
             "choices": [
-              "優先確認の候補",
-              "アラートの重要度",
               "侵害成功の確定",
-              "追加証拠が必要"
+              "追加証拠が必要",
+              "アラートの重要度",
+              "優先確認の候補"
             ],
-            "answer": 2,
+            "answer": 0,
             "explain": "highは優先度を示すだけで、侵害成功やtrue positiveを確定しません。"
           }
         },
@@ -4590,12 +4770,12 @@
           "quiz": {
             "question": "A-1002のチケットから分かることは？",
             "choices": [
-              "本番全体を恒久抑制",
+              "期限を過ぎた同じ対象も承認済み",
+              "staging以外の対象も承認済み",
               "承認済みの限定時間窓",
-              "資格情報の内容",
-              "アラート削除完了"
+              "同じルールの全環境が承認済み"
             ],
-            "answer": 1,
+            "answer": 2,
             "explain": "CHG-204はapprovedですが、対象と時間窓が限定されています。恒久的・全環境の抑制は正当化しません。"
           }
         },
@@ -4643,12 +4823,12 @@
           "quiz": {
             "question": "approved行を抽出する理由は？",
             "choices": [
-              "未承認を隠すため",
+              "対象を問わず全時間帯の許可とする",
+              "承認済みならすべて誤検知とする",
               "承認範囲を限定して確認するため",
-              "全検知を停止するため",
-              "CSVを削除するため"
+              "approvedなら再生テスト済みとする"
             ],
-            "answer": 1,
+            "answer": 2,
             "explain": "承認済みの対象と時間窓だけを根拠にし、未承認や範囲外のアラートを抑制しないためです。"
           }
         },
@@ -4732,9 +4912,9 @@
             "question": "allowlist一致だけで安全に抑制できない理由は？",
             "choices": [
               "対象と時間窓の一致も必要",
-              "grepが読み取り専用だから",
-              "高重要度が消えるから",
-              "JSONが小さいから"
+              "IDが一致すれば期限は確認不要",
+              "文字列一致は承認者の確認も代替",
+              "同じassetなら本番にも適用可能"
             ],
             "answer": 0,
             "explain": "allowlist一致でもasset・承認時間窓・ownerを確認しないと、別環境や期限外の検知を見逃します。"
@@ -4745,7 +4925,7 @@
           "order": 5,
           "title": "抑制しない判断を報告する",
           "goal": "TP・FP候補、見逃しリスク、ルール変更前の確認条件を報告する",
-          "context": "アラート、チケット、allowlistを照合しました。最後に、ルール変更そのものは実行せず、可用性と検知漏れのトレードオフを整理します。",
+          "context": "これまでの出力と今回の記録を比較します。確認クイズの「前のミッションの証拠」から、調査済みの出力を見返せます。",
           "category": "検知チューニング",
           "command": "cat tuning-review.md",
           "tokens": [
@@ -4764,22 +4944,34 @@
               "safety": "Northstar Labの模擬文書だけを参照します。"
             }
           ],
-          "output": "$ cat tuning-review.md\nTP-candidate: A-1001 (no approved ticket; keep alert)\nFP-candidate: A-1002 (staging + CHG-204 window; validate owner and expiry)\nDo not change rule. Require scope, time, owner, rollback and replay test.",
+          "output": "$ cat tuning-review.md\nA-1001: rule=admin-path; approved_ticket=NONE\nA-1002: rule=token-anomaly; asset=staging-token-test; observed=2026-08-24T00:03:18Z\nCHG-204: approved; window=2026-08-24T00:00Z/00:10Z; owner=qa\nrollback=pending; replay_test=pending; owner_validation=pending",
           "evidence": "A-1001は承認なしのため検知を維持し、A-1002は限定的FP候補に留めます。抑制前に対象・時間・owner・期限・ロールバック・再生テストが必要です。単純な抑制は見逃しを増やします。",
           "handoff": "EP19ではasset inventory・identity・DNS・proxy・endpointを照合し、confirmed/suspected/clearedの境界と封じ込めの事業影響を判断します。",
           "quiz": {
-            "question": "最終的にルール変更を実行しない理由は？",
+            "kind": "decision",
+            "question": "A-1002の抑制を検討する際、承認前に確認する組合せは？",
             "choices": [
-              "検知は全て誤りだから",
-              "限定条件と再生テストが未完了だから",
-              "ログが読めないから",
-              "外部通信が必要だから"
+              "stagingの対象・CHG-204の時間窓・再生テスト",
+              "approvedの文字があるので期限後も抑制する",
+              "同じルール名なら本番にも抑制を広げる",
+              "A-1002と同じhighのアラートをまとめて抑制する"
             ],
-            "answer": 1,
-            "explain": "A-1002も限定的FP候補です。範囲・期限・owner・ロールバック・再生テストを確認してから承認判断します。"
+            "answer": 0,
+            "explain": "承認はstaging-token-testと限定時間窓に対応しています。対象・期限・ownerを確かめ、既知の検知対象を見逃さないか再生テストし、ロールバック条件もそろえて判断します。",
+            "sources": [
+              "ep18-m1",
+              "ep18-m2",
+              "ep18-m3",
+              "ep18-m4"
+            ]
           }
         }
-      ]
+      ],
+      "learningIntro": {
+        "title": "検知ルール・TP・FP",
+        "body": "TPは検知対象を捉えたもの、FPは誤検知です。allowlistは照合対象の一覧であり、一致だけで抑制を承認するものではありません。",
+        "focus": "対象・時間窓・ownerを照合します。再生テストは過去の記録を使い、検知すべき事象が残るか確かめる方法です。"
+      }
     },
     {
       "id": "ep19",
@@ -4826,9 +5018,9 @@
             "question": "資産台帳のcriticalityが役立つ理由は？",
             "choices": [
               "封じ込め順と影響を考える",
-              "資格情報を得る",
-              "ログを削除する",
-              "DNSを変更する"
+              "不正操作を行った主体を示す",
+              "調査済みの証拠の件数を示す",
+              "侵害が成功した確率を示す"
             ],
             "answer": 0,
             "explain": "criticalityと環境は、調査優先度や封じ込め時の可用性影響を評価する材料です。"
@@ -4871,12 +5063,12 @@
           "quiz": {
             "question": "status=expectedの意味は？",
             "choices": [
-              "侵害成功",
               "予定された記録の候補",
-              "資産削除済み",
-              "資格情報漏えい"
+              "本人確認が完了した記録",
+              "全ログで正常と確認済み",
+              "業務承認の範囲まで検証済み"
             ],
-            "answer": 1,
+            "answer": 0,
             "explain": "expectedは台帳上の予定された活動を示す証拠で、他ログとの矛盾がないかを確認してcleared候補にします。"
           }
         },
@@ -4918,9 +5110,9 @@
             "question": "DNSの期待値一致だけでclearedにしない理由は？",
             "choices": [
               "別証拠が未確認",
-              "IPが文書用だから",
-              "grepが遅いから",
-              "台帳がJSONだから"
+              "DNS一致は認証の正当性も示す",
+              "DNS一致は端末の実行結果も示す",
+              "期待IPなら変更承認も検証済み"
             ],
             "answer": 0,
             "explain": "名前解決が正しくても、アクセス主体やendpoint状態は別証拠です。複数系統を確認して境界を決めます。"
@@ -4963,10 +5155,10 @@
           "quiz": {
             "question": "proxyの404とendpointのdeniedから言えることは？",
             "choices": [
-              "実行成功が確定",
+              "拒否されたのでその前の処理も無害",
               "観測された拒否の相関",
-              "DB侵害が確定",
-              "全資産を隔離すべき"
+              "同じ要求の全経路が正常",
+              "同じ送信元の全操作が拒否された"
             ],
             "answer": 1,
             "explain": "同一requestIdで拒否が相関しますが、成功実行やDB侵害は示されません。範囲を狭く評価します。"
@@ -4977,7 +5169,7 @@
           "order": 5,
           "title": "境界と封じ込めを報告する",
           "goal": "confirmed・suspected・未観測を根拠付きで分類し可用性と優先順位を報告する",
-          "context": "台帳・identity・DNS・proxy・endpointの証拠がそろいました。最後にboundary-report.mdを読み、過剰な隔離を避けつつ、次の承認工程へ引き継ぎます。",
+          "context": "これまでの出力と今回の記録を比較します。確認クイズの「前のミッションの証拠」から、調査済みの出力を見返せます。",
           "category": "範囲評価",
           "command": "cat boundary-report.md",
           "tokens": [
@@ -4996,22 +5188,34 @@
               "safety": "架空のNorthstar Lab文書を参照します。"
             }
           ],
-          "output": "$ cat boundary-report.md\nconfirmed: req-7f21 proxy 404/endpoint denied on ns-web-02\nsuspected: unauthorized use of maya session; no process proof\nnot-observed: ns-db-01 batch-lab req-7f23; no conflicting evidence in checked sources\ncontainment: preserve ns-web-02 evidence; owner approval before isolation; keep ns-db-01 available",
+          "output": "$ cat boundary-report.md\nns-web-02: req-7f21 proxy=404 endpoint=session-denied user=maya\nns-web-02: process_proof=not-collected; ticket_proof=not-collected\nns-db-01: req-7f23 user=batch-lab status=expected\nns-db-01: checked_sources=identity,inventory; conflicting_record=not-observed\nns-db-01: other_sources=not-checked; owner=data-team",
           "evidence": "confirmedはreq-7f21のproxy 404とendpoint deniedという観測が一致した範囲、suspectedは不正利用の仮説です。ns-db-01はchecked sourcesで矛盾を観測していないだけで、clearedとはせず継続確認します。隔離は証拠保全とweb-team承認を先にし、ns-db-01は可用性のため監視を続けます。",
           "handoff": "EP20ではbaseline hash・service health・listener・認証エラー・回帰試験・incident summaryを読み、復旧条件と残余リスクを最終確認します。",
           "quiz": {
-            "question": "封じ込めの優先判断として適切なのは？",
+            "kind": "decision",
+            "question": "ns-db-01の状態を報告するなら、どの表現が証拠に合いますか？",
             "choices": [
-              "全資産を即時停止",
-              "承認後に証拠保全を優先",
-              "DBを削除する",
-              "ログを上書きする"
+              "web側の拒否を確認したためDB側も安全",
+              "expectedなので全経路で侵害がない",
+              "調べた記録では矛盾未観測。未確認範囲は残る",
+              "criticalなので侵害が確認された扱いにする"
             ],
-            "answer": 1,
-            "explain": "ns-web-02はsuspectedの根拠があるため、owner承認と可用性影響を評価した後に証拠保全を優先します。"
+            "answer": 2,
+            "explain": "expectedは予定された記録の候補であり安全証明ではありません。確認済みの範囲と未確認の範囲を分け、DBの可用性も踏まえて継続確認します。",
+            "sources": [
+              "ep19-m1",
+              "ep19-m2",
+              "ep19-m3",
+              "ep19-m4"
+            ]
           }
         }
-      ]
+      ],
+      "learningIntro": {
+        "title": "調査範囲・資産台帳",
+        "body": "資産台帳は対象のownerや重要度を整理した記録です。confirmedは証拠で確認した範囲、suspectedは仮説、not-observedは調べた記録で観測していない範囲として使います。",
+        "focus": "何を確認したかだけでなく、どのログや期間をまだ確認していないかも記録します。"
+      }
     },
     {
       "id": "ep20",
@@ -5058,9 +5262,9 @@
             "question": "sha256sum -cのOKが示すことは？",
             "choices": [
               "内容がbaselineと一致",
-              "サービスが安全と確定",
-              "攻撃者を特定",
-              "ログを削除"
+              "設定の運用上の安全性も確認済み",
+              "正規の作成者まで確認済み",
+              "すべてのファイルが一致済み"
             ],
             "answer": 0,
             "explain": "OKはチェックサム一致を示すだけで、サービスの健全性や攻撃者の有無は別途確認します。"
@@ -5094,14 +5298,14 @@
           "evidence": "web-gatewayと依存先はhealthy、health-checkはexpected、再起動回数は0です。ヘルスチェックは機能確認の一部で、認証エラーやlistenerの確認を代替しません。",
           "handoff": "次はexpected-listeners.txtを読み、復旧後に公開されている待受が承認済みと一致するか確認します。",
           "quiz": {
-            "question": "health-check=200だけで十分でない理由は？",
+            "question": "health-check=200の結果をどう評価しますか？",
             "choices": [
+              "200なら監視期間は考慮不要",
               "listenerと認証を未確認だから",
-              "HTTPは必ず攻撃だから",
-              "hashが不要になるから",
-              "サービスを削除するから"
+              "200ならすべてのパスが正常",
+              "200なら認証の正当性も保証"
             ],
-            "answer": 0,
+            "answer": 1,
             "explain": "HTTPヘルスチェックは一部機能の応答です。待受・認証エラー・回帰試験も合わせて復旧を判断します。"
           }
         },
@@ -5135,12 +5339,12 @@
           "quiz": {
             "question": "unexpected=noneが示すものは？",
             "choices": [
+              "待受アプリの脆弱性もない",
+              "全資産で想定外待受はない",
               "不要な待受を観測しない",
-              "侵害が永久にない",
-              "認証が成功した",
-              "全ログが削除済み"
+              "別時刻にも想定外待受はない"
             ],
-            "answer": 0,
+            "answer": 2,
             "explain": "期待外の待受がないという観測であり、認証や将来のリスクが完全に消えたことまでは示しません。"
           }
         },
@@ -5186,14 +5390,14 @@
           "evidence": "復旧後15分のauth_errorは0件で、web-authz回帰試験はPASSです。短い観測窓なので、長期監視と再発防止の確認は残ります。",
           "handoff": "最後にincident-summary.mdを読み、復旧条件・残余リスク・再発防止を最終報告します。",
           "quiz": {
-            "question": "auth_error count=0の限界は？",
+            "question": "この認証・回帰試験の記録について、正しい解釈は？",
             "choices": [
+              "全ユーザーで認証が検証済み",
+              "全時間帯の認証が正常",
               "観測窓が15分に限られる",
-              "復旧失敗が確定",
-              "listenerが削除された",
-              "全ユーザーが検証済み"
+              "回帰テストで全攻撃経路を網羅"
             ],
-            "answer": 0,
+            "answer": 2,
             "explain": "15分間にエラーがなかったという限定的な証拠です。長期監視や追加テストが必要です。"
           }
         },
@@ -5202,7 +5406,7 @@
           "order": 5,
           "title": "復旧完了を報告する",
           "goal": "復旧条件・残余リスク・再発防止策を根拠付きで最終報告する",
-          "context": "hash、service health、listener、認証エラー、回帰試験を確認しました。最後にincident-summary.mdを読み、完了条件と未完了のリスクを明確にしてカリキュラムを閉じます。",
+          "context": "これまでの出力と今回の記録を比較します。確認クイズの「前のミッションの証拠」から、調査済みの出力を見返せます。",
           "category": "最終報告",
           "command": "cat incident-summary.md",
           "tokens": [
@@ -5221,22 +5425,34 @@
               "safety": "Northstar Labの架空報告書を参照します。"
             }
           ],
-          "output": "$ cat incident-summary.md\nrecovery=ready: hash OK, health OK, listeners expected, auth_error=0, regression PASS\nresidual-risk: short observation window; token-anomaly rule needs scoped review\nprevention: UTC log standard, ticket-to-alert join, owner approval, replay tests\nclosure: monitor 24h and review CHG-204 expiry",
+          "output": "$ cat incident-summary.md\nhash=OK health=200 listeners=expected\nauth_error=0 observation_window=15m regression=PASS\ntoken-anomaly: scope_review=pending\nCHG-204: expiry_review=pending\nlong_term_monitoring=not-completed",
           "evidence": "復旧条件は確認済みで、即時の変更・削除なしにreadyと報告できます。残余リスクは観測窓の短さとtoken-anomalyルールの限定レビューで、24時間監視・CHG-204期限確認・owner承認・回帰再生テストを次工程にします。",
-          "handoff": "TRACE / TYPEの全工程を完了します。最終報告は観測事実、証拠の限界、可用性とのトレードオフ、承認済みの次工程を分けて保存します。",
+          "handoff": "復旧確認の引き継ぎでは、観測事実、証拠の限界、可用性とのトレードオフ、次に確認する監視期間と承認条件を分けて記録します。",
           "quiz": {
-            "question": "最終報告に残すべき残余リスクは？",
+            "kind": "decision",
+            "question": "最終報告として、確認結果・限界・次の確認をそろえたものは？",
             "choices": [
-              "短い観測窓とルールレビュー",
-              "全ログの削除",
-              "資格情報の収集",
-              "実在組織への通知"
+              "復旧条件は一致。回帰PASSなので観測15分で監視終了",
+              "復旧条件は一致。観測15分のため監視継続とルール範囲確認",
+              "復旧条件は一致。監視は続けるがルールの範囲確認は不要",
+              "復旧条件は一致。承認済みCHG-204の適用期限を無期限に延長"
             ],
-            "answer": 0,
-            "explain": "復旧条件を満たしても観測窓は短く、token-anomalyルールの限定レビューが残ります。監視と承認済み再発防止を引き継ぎます。"
+            "answer": 1,
+            "explain": "hash・health・待受・認証・回帰テストは復旧判断の材料です。ただし認証の観測は15分で、ルールの限定レビューも残ります。条件を満たした範囲と限界を明記して継続監視へ引き継ぎます。",
+            "sources": [
+              "ep20-m1",
+              "ep20-m2",
+              "ep20-m3",
+              "ep20-m4"
+            ]
           }
         }
-      ]
+      ],
+      "learningIntro": {
+        "title": "復旧検証・baseline",
+        "body": "baselineは比較の基準です。内容、サービス、待受、認証、回帰テストを別々に確認し、復旧条件を評価します。回帰テストは既知の動作が再び壊れていないかを調べます。",
+        "focus": "検証した対象と観測期間を明記します。ひとつの検査の成功を全体の安全保証に広げないことが大切です。"
+      }
     }
   ]
 }
