@@ -30,6 +30,10 @@ test("public HTML pages expose consistent search and social metadata", async () 
     assert.match(html, /<meta name="twitter:card" content="summary">/);
     assert.match(html, /<meta name="twitter:title" content="[^"]+">/);
     assert.match(html, /<meta name="twitter:description" content="[^"]+">/);
+    const expected = `https://trace-type.com/${page === "index.html" ? "" : page.replace(/\.html$/, "")}`;
+    assert.ok(html.includes(`<link rel="canonical" href="${expected}">`), page);
+    assert.ok(html.includes(`<meta property="og:url" content="${expected}">`), page);
+    assert.doesNotMatch(html, /https:\/\/trace-type\.com\/[^"\s<>]*\.html/);
   }
 });
 
@@ -48,12 +52,12 @@ test("sitemap contains only the intended canonical public URLs", async () => {
   );
   const expected = [
     "https://trace-type.com/",
-    "https://trace-type.com/lab.html",
-    "https://trace-type.com/safety.html",
-    "https://trace-type.com/privacy.html",
-    "https://trace-type.com/about.html",
-    "https://trace-type.com/how-to-play.html",
-    "https://trace-type.com/faq.html",
+    "https://trace-type.com/lab",
+    "https://trace-type.com/safety",
+    "https://trace-type.com/privacy",
+    "https://trace-type.com/about",
+    "https://trace-type.com/how-to-play",
+    "https://trace-type.com/faq",
     ...episodePages,
   ];
   assert.deepEqual(locs, expected);
@@ -68,4 +72,22 @@ test("index and lab retain useful copy before JavaScript executes", async () => 
   assert.match(index, /置き去りの作業メモ/);
   assert.match(lab, /20エピソード・96ミッション/);
   assert.match(lab, /実際のシステムには接続せず/);
+});
+
+test("episode guide answers refer to real missions without changing curriculum", async () => {
+  const guides = JSON.parse(await readFile("data/episode-guides.json", "utf8"));
+  const { episodes } = JSON.parse(await readFile("data/missions.json", "utf8"));
+  for (const [id, questions] of Object.entries(guides)) {
+    const episode = episodes.find((item) => item.id === id);
+    assert.ok(episode, id);
+    assert.ok(questions.length > 0 && questions.length <= 3);
+    for (const { question, answer, missionIds } of questions) {
+      assert.ok(question.endsWith("？"));
+      assert.ok(answer.length > 20 && answer.length < 300);
+      assert.ok(missionIds.length > 0);
+      for (const missionId of missionIds) {
+        assert.ok(episode.missions.some((mission) => mission.id === missionId), missionId);
+      }
+    }
+  }
 });

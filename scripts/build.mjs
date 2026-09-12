@@ -3,6 +3,7 @@ import { access, cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 const root = new URL("../", import.meta.url);
 const output = new URL("dist/", root);
 const siteOrigin = "https://trace-type.com";
+const episodeGuides = JSON.parse(await readFile(new URL("data/episode-guides.json", root), "utf8"));
 
 function escapeHtml(value) {
   return String(value)
@@ -23,6 +24,11 @@ function episodePage(episode, index, episodes) {
   const pageTitle = `EP ${number}「${episode.title}」 — TRACE / TYPE`;
   const description = `${episode.title}：${episode.subtitle}。TRACE / TYPEで架空ログを読み、セキュリティ調査の考え方を学ぶエピソードです。`;
   const intro = episode.learningIntro;
+  const guide = episodeGuides[episode.id];
+  const guideHtml = guide ? `<section aria-labelledby="guideTitle">
+      <h2 id="guideTitle">調査の考え方を知る</h2>
+      ${guide.map(({ question, answer }) => `<h3>${escapeHtml(question)}</h3><p>${escapeHtml(answer)}</p>`).join("\n      ")}
+      </section>` : "";
   const previous = episodes[index - 1];
   const next = episodes[index + 1];
   const schema = {
@@ -37,7 +43,7 @@ function episodePage(episode, index, episodes) {
       "@type": "BreadcrumbList",
       itemListElement: [
         { "@type": "ListItem", position: 1, name: "TRACE / TYPE", item: `${siteOrigin}/` },
-        { "@type": "ListItem", position: 2, name: "エピソードの内容", item: `${siteOrigin}/about.html#episodes` },
+        { "@type": "ListItem", position: 2, name: "エピソードの内容", item: `${siteOrigin}/about#episodes` },
         { "@type": "ListItem", position: 3, name: `EP ${number} ${episode.title}`, item: canonical },
       ],
     },
@@ -101,6 +107,8 @@ function episodePage(episode, index, episodes) {
       <ol>
 ${missionItems}
       </ol>
+
+      ${guideHtml}
 
       <p><a class="home-resume" href="../../lab.html?episode=${episode.id}">ブラウザラボでEP ${number}を始める →</a></p>
       <nav class="episode-landing-nav" aria-label="エピソード移動">
