@@ -3,19 +3,30 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="TRACE / TYPEのブラウザ学習ラボ。コマンドを一文字ずつ入力して、調査の意味と安全な考え方を学びます。">
-  <title>TRACE / TYPE — Narrative Security Lab</title>
+  <meta name="description" content="TRACE / TYPEのブラウザ学習ラボ。コマンドを一文字ずつ入力し、架空ログの調査と安全な判断をエピソード形式で学びます。">
+  <title>TRACE / TYPE — セキュリティ調査を学ぶブラウザラボ</title>
   <meta name="theme-color" content="#101113">
   <link rel="canonical" href="https://trace-type.com/lab.html">
   <meta property="og:locale" content="ja_JP">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="TRACE / TYPE — Narrative Security Lab">
-  <meta property="og:description" content="コマンドを一文字ずつ入力して、調査の意味と安全な考え方を学ぶブラウザ教材です。">
+  <meta property="og:title" content="TRACE / TYPE — セキュリティ調査を学ぶブラウザラボ">
+  <meta property="og:description" content="コマンドを一文字ずつ入力し、架空ログの調査と安全な判断をエピソード形式で学びます。">
   <meta property="og:url" content="https://trace-type.com/lab.html">
   <meta property="og:site_name" content="TRACE / TYPE">
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="TRACE / TYPE — Narrative Security Lab">
-  <meta name="twitter:description" content="コマンドを一文字ずつ入力して、調査の意味と安全な考え方を学ぶブラウザ教材です。">
+  <meta name="twitter:title" content="TRACE / TYPE — セキュリティ調査を学ぶブラウザラボ">
+  <meta name="twitter:description" content="コマンドを一文字ずつ入力し、架空ログの調査と安全な判断をエピソード形式で学びます。">
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "name": "TRACE / TYPE — セキュリティ調査を学ぶブラウザラボ",
+      "url": "https://trace-type.com/lab.html",
+      "description": "コマンドを一文字ずつ入力し、架空ログの調査と安全な判断をエピソード形式で学びます。",
+      "isPartOf": {"@type": "WebSite", "name": "TRACE / TYPE", "url": "https://trace-type.com/"},
+      "inLanguage": "ja-JP"
+    }
+  </script>
   <link rel="stylesheet" href="styles.css?v=20260909-curriculum1">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
 </head>
@@ -44,10 +55,10 @@
         <span class="story-toggle-label" id="storyToggleLabel">左欄を閉じる</span>
       </button>
       <div class="story-content" id="storyContent">
-        <h1 id="episodeTitle">読み込み中</h1>
-        <p id="episodeSubtitle"></p>
-        <p id="episodeBriefing" class="episode-briefing"></p>
-        <div class="episode-progress" id="episodeProgress"></div>
+        <h1 id="episodeTitle">TRACE / TYPE 学習ラボ</h1>
+        <p id="episodeSubtitle">エピソードを選び、コマンドを一文字ずつ入力して調査の意味を学びます。</p>
+        <p id="episodeBriefing" class="episode-briefing">20エピソード・96ミッションの架空ログを使う、防御的なブラウザ教材です。実際のシステムには接続せず、読み取りと監査の考え方をクイズで確認します。</p>
+        <div class="episode-progress" id="episodeProgress">エピソード一覧から学習を開始できます。</div>
         <nav class="mission-sequence" id="missionSequence" aria-label="ミッション手順"></nav>
       </div>
     </aside>
@@ -55,7 +66,7 @@
       <header class="practice-header">
         <div>
           <div class="section-label" id="missionMeta">MISSION</div>
-          <h2 id="missionTitle">読み込み中</h2>
+          <h2 id="missionTitle">ミッションを読み込んでいます</h2>
           <p id="missionGoal"></p>
         </div>
         <div class="stats" aria-label="タイピング統計">
@@ -154,6 +165,9 @@
     <span>ブラウザ内の学習環境です。実際のシステムには接続しません。</span>
     <a href="safety.html">安全方針</a>
     <a href="privacy.html">広告・プライバシー</a>
+    <a href="about.html">TRACE / TYPEとは</a>
+    <a href="how-to-play.html">遊び方</a>
+    <a href="faq.html">FAQ</a>
     <button id="resetAll" type="button">全進捗をリセット</button>
   </footer>
   <dialog id="commandPalette" aria-labelledby="paletteTitle">

@@ -3,26 +3,26 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="description" content="TRACE / TYPEは、コマンドを一文字ずつ入力して調査の意味を学ぶブラウザ教材です。">
-  <title>TRACE / TYPE — TYPE → UNDERSTAND.</title>
+  <meta name="description" content="TRACE / TYPEは、コマンドを一文字ずつ入力しながら架空ログを読み、セキュリティ調査の意味と安全な判断を学ぶブラウザ教材です。">
+  <title>TRACE / TYPE — セキュリティ調査をタイピングで学ぶブラウザ教材</title>
   <meta name="theme-color" content="#101113">
   <link rel="canonical" href="https://trace-type.com/">
   <meta property="og:locale" content="ja_JP">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="TRACE / TYPE — TYPE → UNDERSTAND.">
-  <meta property="og:description" content="コマンドを一文字ずつ入力して、調査の意味と安全な考え方を学ぶブラウザ教材です。">
+  <meta property="og:title" content="TRACE / TYPE — セキュリティ調査をタイピングで学ぶブラウザ教材">
+  <meta property="og:description" content="コマンドを一文字ずつ入力しながら架空ログを読み、セキュリティ調査の意味と安全な判断を学ぶブラウザ教材です。">
   <meta property="og:url" content="https://trace-type.com/">
   <meta property="og:site_name" content="TRACE / TYPE">
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="TRACE / TYPE — TYPE → UNDERSTAND.">
-  <meta name="twitter:description" content="コマンドを一文字ずつ入力して、調査の意味と安全な考え方を学ぶブラウザ教材です。">
+  <meta name="twitter:title" content="TRACE / TYPE — セキュリティ調査をタイピングで学ぶブラウザ教材">
+  <meta name="twitter:description" content="コマンドを一文字ずつ入力しながら架空ログを読み、セキュリティ調査の意味と安全な判断を学ぶブラウザ教材です。">
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "WebSite",
       "name": "TRACE / TYPE",
       "url": "https://trace-type.com/",
-      "description": "コマンドを一文字ずつ入力して、調査の意味と安全な考え方を学ぶブラウザ教材です。",
+      "description": "コマンドを一文字ずつ入力しながら架空ログを読み、セキュリティ調査の意味と安全な判断を学ぶブラウザ教材です。",
       "inLanguage": "ja-JP"
     }
   </script>
@@ -46,13 +46,38 @@
         <h2 id="episodeIndexTitle">エピソードを選ぶ</h2>
         <p id="homeStatus" role="status" aria-live="polite">エピソードを読み込んでいます。</p>
       </div>
-      <nav id="episodeList" class="home-episode-list" aria-label="エピソード一覧"></nav>
+      <nav id="episodeList" class="home-episode-list" aria-label="エピソード一覧">
+        <a class="home-episode-row" href="lab.html?episode=ep01"><span class="home-episode-number">EP 01</span><span class="home-episode-body"><span class="home-episode-title">置き去りの作業メモ</span><span class="home-episode-subtitle">case-014の作業場所を確定する</span><span class="home-episode-progress">進捗を確認中</span></span><span class="home-episode-arrow" aria-hidden="true">→</span></a>
+        <a class="home-episode-row" href="lab.html?episode=ep02"><span class="home-episode-number">EP 02</span><span class="home-episode-body"><span class="home-episode-title">管理者権限の不審な利用</span><span class="home-episode-subtitle">許可済み委任ルールを防御的に監査する</span><span class="home-episode-progress">進捗を確認中</span></span><span class="home-episode-arrow" aria-hidden="true">→</span></a>
+        <a class="home-episode-row" href="lab.html?episode=ep03"><span class="home-episode-number">EP 03</span><span class="home-episode-body"><span class="home-episode-title">メール配送先の改変</span><span class="home-episode-subtitle">予約ドメインのDNS変更記録を照合する</span><span class="home-episode-progress">進捗を確認中</span></span><span class="home-episode-arrow" aria-hidden="true">→</span></a>
+        <a class="home-episode-row" href="lab.html?episode=ep04"><span class="home-episode-number">EP 04</span><span class="home-episode-body"><span class="home-episode-title">公開サーバーの探索痕跡</span><span class="home-episode-subtitle">ログを相関し、報告材料へ整理する</span><span class="home-episode-progress">進捗を確認中</span></span><span class="home-episode-arrow" aria-hidden="true">→</span></a>
+        <a class="home-episode-row" href="lab.html?episode=ep05"><span class="home-episode-number">EP 05</span><span class="home-episode-body"><span class="home-episode-title">共有アカウントの深夜ログイン</span><span class="home-episode-subtitle">認証とセッションの記録を結び付ける</span><span class="home-episode-progress">進捗を確認中</span></span><span class="home-episode-arrow" aria-hidden="true">→</span></a>
+        <a class="home-episode-row" href="lab.html?episode=ep06"><span class="home-episode-number">EP 06</span><span class="home-episode-body"><span class="home-episode-title">時刻のずれた監査証跡</span><span class="home-episode-subtitle">UTC・ローカル時刻とNTP状態を正規化する</span><span class="home-episode-progress">進捗を確認中</span></span><span class="home-episode-arrow" aria-hidden="true">→</span></a>
+        <a class="home-episode-row" href="lab.html?episode=ep07"><span class="home-episode-number">EP 07</span><span class="home-episode-body"><span class="home-episode-title">改変された配布ファイル</span><span class="home-episode-subtitle">ハッシュ・更新時刻・配布記録を突き合わせる</span><span class="home-episode-progress">進捗を確認中</span></span><span class="home-episode-arrow" aria-hidden="true">→</span></a>
+        <a class="home-episode-row" href="lab.html?episode=ep08"><span class="home-episode-number">EP 08</span><span class="home-episode-body"><span class="home-episode-title">停止した監視エージェント</span><span class="home-episode-subtitle">停止時刻・理由・通信欠落を読み解く</span><span class="home-episode-progress">進捗を確認中</span></span><span class="home-episode-arrow" aria-hidden="true">→</span></a>
+        <a class="home-episode-row" href="lab.html?episode=ep09"><span class="home-episode-number">EP 09</span><span class="home-episode-body"><span class="home-episode-title">APIで急増した404</span><span class="home-episode-subtitle">探索痕跡と通常障害をアクセスログで分ける</span><span class="home-episode-progress">進捗を確認中</span></span><span class="home-episode-arrow" aria-hidden="true">→</span></a>
+        <a class="home-episode-row" href="lab.html?episode=ep10"><span class="home-episode-number">EP 10</span><span class="home-episode-body"><span class="home-episode-title">期限外のTLS証明書</span><span class="home-episode-subtitle">証明書の期限と配布経路を照合する</span><span class="home-episode-progress">進捗を確認中</span></span><span class="home-episode-arrow" aria-hidden="true">→</span></a>
+        <a class="home-episode-row" href="lab.html?episode=ep11"><span class="home-episode-number">EP 11</span><span class="home-episode-body"><span class="home-episode-title">なりすましメールのヘッダー</span><span class="home-episode-subtitle">保存済みヘッダーと添付ハッシュを照合する</span><span class="home-episode-progress">進捗を確認中</span></span><span class="home-episode-arrow" aria-hidden="true">→</span></a>
+        <a class="home-episode-row" href="lab.html?episode=ep12"><span class="home-episode-number">EP 12</span><span class="home-episode-body"><span class="home-episode-title">クラウド管理操作の連鎖</span><span class="home-episode-subtitle">架空JSONLのactor・MFA・requestIdを相関する</span><span class="home-episode-progress">進捗を確認中</span></span><span class="home-episode-arrow" aria-hidden="true">→</span></a>
+        <a class="home-episode-row" href="lab.html?episode=ep13"><span class="home-episode-number">EP 13</span><span class="home-episode-body"><span class="home-episode-title">再起動を繰り返すコンテナ</span><span class="home-episode-subtitle">lab namespaceのPod証拠を時系列で読む</span><span class="home-episode-progress">進捗を確認中</span></span><span class="home-episode-arrow" aria-hidden="true">→</span></a>
+        <a class="home-episode-row" href="lab.html?episode=ep14"><span class="home-episode-number">EP 14</span><span class="home-episode-body"><span class="home-episode-title">署名のないビルド成果物</span><span class="home-episode-subtitle">commit・artifact・digestを証拠範囲で照合する</span><span class="home-episode-progress">進捗を確認中</span></span><span class="home-episode-arrow" aria-hidden="true">→</span></a>
+        <a class="home-episode-row" href="lab.html?episode=ep15"><span class="home-episode-number">EP 15</span><span class="home-episode-body"><span class="home-episode-title">見慣れない自動起動設定</span><span class="home-episode-subtitle">systemdの新規ファイルと監査記録を読む</span><span class="home-episode-progress">進捗を確認中</span></span><span class="home-episode-arrow" aria-hidden="true">→</span></a>
+        <a class="home-episode-row" href="lab.html?episode=ep16"><span class="home-episode-number">EP 16</span><span class="home-episode-body"><span class="home-episode-title">Windows端末の認証連鎖</span><span class="home-episode-subtitle">Securityログのイベントを相関する</span><span class="home-episode-progress">進捗を確認中</span></span><span class="home-episode-arrow" aria-hidden="true">→</span></a>
+        <a class="home-episode-row" href="lab.html?episode=ep17"><span class="home-episode-number">EP 17</span><span class="home-episode-body"><span class="home-episode-title">三系統ログの時刻合わせ</span><span class="home-episode-subtitle">auth・web・cloudをUTCで相関する</span><span class="home-episode-progress">進捗を確認中</span></span><span class="home-episode-arrow" aria-hidden="true">→</span></a>
+        <a class="home-episode-row" href="lab.html?episode=ep18"><span class="home-episode-number">EP 18</span><span class="home-episode-body"><span class="home-episode-title">検知ルールの過検知調整</span><span class="home-episode-subtitle">アラートと承認記録を比較する</span><span class="home-episode-progress">進捗を確認中</span></span><span class="home-episode-arrow" aria-hidden="true">→</span></a>
+        <a class="home-episode-row" href="lab.html?episode=ep19"><span class="home-episode-number">EP 19</span><span class="home-episode-body"><span class="home-episode-title">侵害範囲の境界線</span><span class="home-episode-subtitle">複数の証拠でconfirmedを定義する</span><span class="home-episode-progress">進捗を確認中</span></span><span class="home-episode-arrow" aria-hidden="true">→</span></a>
+        <a class="home-episode-row" href="lab.html?episode=ep20"><span class="home-episode-number">EP 20</span><span class="home-episode-body"><span class="home-episode-title">復旧後の最終確認</span><span class="home-episode-subtitle">復旧条件と残余リスクを閉じる</span><span class="home-episode-progress">進捗を確認中</span></span><span class="home-episode-arrow" aria-hidden="true">→</span></a>
+      </nav>
+      <p><a class="home-resume" href="about.html#episodes">各エピソードの内容を見る →</a></p>
     </section>
   </main>
   <footer class="home-footer">
     <span class="home-footer-copy">TRACE / TYPE · タイピングで学ぶセキュリティ教材</span>
     <a class="home-resume" href="safety.html">安全方針</a>
     <a class="home-resume" href="privacy.html">広告・プライバシー</a>
+    <a class="home-resume" href="about.html">TRACE / TYPEとは</a>
+    <a class="home-resume" href="how-to-play.html">遊び方</a>
+    <a class="home-resume" href="faq.html">FAQ</a>
     <span class="home-credit">created by okokp</span>
   </footer>
   <script type="module" src="home.js?v=20260825-home2"></script>
